@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BOMBA BOWLS - Divadelní klub </title>
+    <title>BOMBA BOWLS - Divadelní klub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .search-results { position: absolute; z-index: 100; width: 100%; max-height: 200px; overflow-y: auto; background: white; border-radius: 12px; shadow: 10px 10px 15px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="pb-32">
@@ -23,57 +24,47 @@
         </div>
     </nav>
 
-    <section id="view-admin" class="hidden max-w-6xl mx-auto p-4 space-y-8">
+    <section id="view-admin" class="hidden max-w-7xl mx-auto p-4 space-y-8">
         
-        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border-t-8 border-green-500">
-            <h2 class="font-black text-lg uppercase mb-4 italic text-green-700">🛒 Sklad jídla (meals)</h2>
-            <div id="library-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
-            <div class="bg-slate-50 p-4 rounded-3xl border-2 border-dashed">
+        <div class="bg-white p-6 rounded-[3rem] shadow-xl border-t-8 border-orange-500">
+            <h2 class="font-black text-2xl uppercase mb-6 italic text-slate-800 text-center">Týdenní Plánovač Menu</h2>
+            
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="bg-slate-50 p-5 rounded-[2.5rem] border-2 border-slate-100">
+                    <h3 class="font-black text-center text-orange-600 uppercase mb-4 italic">📅 Tento týden (Current)</h3>
+                    <div id="admin-plan-current" class="space-y-4"></div>
+                </div>
+
+                <div class="bg-orange-50 p-5 rounded-[2.5rem] border-2 border-orange-100">
+                    <h3 class="font-black text-center text-blue-600 uppercase mb-4 italic">📅 Příští týden (Next)</h3>
+                    <div id="admin-plan-next" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <div class="mt-8 space-y-3">
+                <button onclick="publishMenu()" class="w-full bg-blue-600 text-white p-6 rounded-3xl font-black uppercase shadow-xl hover:scale-[1.02] transition-transform">📢 ZVEŘEJNIT MENU PRO ZÁKAZNÍKY</button>
+                <button onclick="rolloverWeek()" class="w-full bg-red-600 text-white p-4 rounded-3xl font-black uppercase text-xs opacity-70">➔ Překlopit týden (Archivace)</button>
+            </div>
+        </div>
+
+        <div class="bg-slate-800 p-8 rounded-[3rem] text-white">
+            <h2 class="font-black text-lg uppercase mb-4 italic text-orange-400">📦 Správa Skladu Jídel</h2>
+            <div class="bg-slate-700 p-6 rounded-3xl mb-6">
                 <input id="edit-meal-id" type="hidden">
-                <div class="grid md:grid-cols-3 gap-2">
-                    <input id="m-name" placeholder="Název jídla" class="p-3 rounded-xl border-none font-bold shadow-sm">
-                    <input id="m-desc" placeholder="Složení" class="p-3 rounded-xl border-none font-bold shadow-sm">
+                <div class="grid md:grid-cols-3 gap-3">
+                    <input id="m-name" placeholder="Název nového jídla" class="p-4 rounded-2xl bg-slate-600 border-none font-bold text-white placeholder-slate-400">
+                    <input id="m-desc" placeholder="Složení/Popis" class="p-4 rounded-2xl bg-slate-600 border-none font-bold text-white placeholder-slate-400">
                     <div class="flex gap-2">
-                        <select id="m-cat" class="p-3 rounded-xl border-none font-bold shadow-sm bg-white w-full"><option>Bowl</option><option>Polévka</option></select>
-                        <button id="btn-meal-save" onclick="saveMeal()" class="bg-green-600 text-white px-6 rounded-xl font-black uppercase shadow-md">Uložit</button>
+                        <select id="m-cat" class="p-4 rounded-2xl bg-slate-600 border-none font-bold text-white w-full"><option>Bowl</option><option>Polévka</option></select>
+                        <button id="btn-meal-save" onclick="saveMeal()" class="bg-orange-500 text-white px-8 rounded-2xl font-black uppercase">Uložit</button>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="bg-orange-50 p-6 rounded-[2.5rem] border-2 border-orange-200 shadow-sm">
-            <h2 class="font-black text-lg uppercase mb-4 italic text-orange-700">🗓️ Týdenní menu (Pracovní verze)</h2>
-            <div id="admin-menu-plan" class="grid md:grid-cols-2 gap-4 mb-6"></div>
-            
-            <button onclick="publishMenu()" class="w-full bg-blue-600 text-white p-6 rounded-3xl font-black uppercase shadow-xl hover:bg-blue-700 mb-4">📢 ZVEŘEJNIT MENU PRO ZÁKAZNÍKY</button>
-            <button onclick="rolloverWeek()" class="w-full bg-red-600 text-white p-4 rounded-3xl font-black uppercase text-xs opacity-80">➔ Překlopit týden & Reset</button>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-6">
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border-t-8 border-blue-500">
-                <h3 class="font-black text-blue-600 mb-4 uppercase italic">Firmy</h3>
-                <div class="space-y-2 mb-4 bg-blue-50 p-4 rounded-2xl">
-                    <input id="edit-firm-id" type="hidden"><input id="f-name" placeholder="Firma" class="w-full p-3 rounded-xl font-bold">
-                    <div class="grid grid-cols-2 gap-2"><input id="f-bowl" type="number" placeholder="Bowl Kč" class="p-3 rounded-xl font-bold"><input id="f-soup" type="number" placeholder="Soup Kč" class="p-3 rounded-xl font-bold"></div>
-                    <button id="btn-firm-save" onclick="saveFirm()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px]">Uložit firmu</button>
-                </div>
-                <div id="admin-firms-list" class="space-y-2 max-h-48 overflow-y-auto custom-scroll pr-2"></div>
-            </div>
-
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border-t-8 border-orange-500">
-                <h3 class="font-black text-orange-600 mb-4 uppercase italic">Zákazníci</h3>
-                <div class="space-y-2 mb-4 bg-orange-50 p-4 rounded-2xl">
-                    <input id="edit-cust-id" type="hidden"><input id="c-name" placeholder="Jméno" class="w-full p-3 rounded-xl font-bold">
-                    <select id="c-firm" class="w-full p-3 rounded-xl font-bold"></select><input id="c-pin" type="number" placeholder="PIN" class="w-full p-3 rounded-xl font-bold">
-                    <button id="btn-cust-save" onclick="saveCustomer()" class="w-full bg-orange-500 text-white py-3 rounded-xl font-black uppercase text-[10px]">Uložit zákazníka</button>
-                </div>
-                <div id="admin-customers-list" class="space-y-2 max-h-48 overflow-y-auto custom-scroll pr-2"></div>
-            </div>
+            <div id="library-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-64 overflow-y-auto custom-scroll pr-2"></div>
         </div>
     </section>
 
     <section id="view-orders" class="hidden max-w-5xl mx-auto p-4"></section>
-
     <section id="view-user" class="max-w-4xl mx-auto p-4">
         <div id="user-login" class="max-w-md mx-auto bg-white p-10 rounded-[3.5rem] shadow-2xl text-center mt-10">
             <h2 class="text-2xl font-black mb-6 text-orange-500 uppercase italic">Vítej 🥗</h2>
@@ -81,23 +72,11 @@
             <input id="user-pin-input" type="password" inputmode="numeric" placeholder="PIN" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-6 text-center text-4xl tracking-widest">
             <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-3xl font-black text-xl uppercase shadow-lg">Vstoupit</button>
         </div>
-
         <div id="user-order-zone" class="hidden space-y-6">
             <div id="active-user-display" class="bg-blue-600 text-white p-5 rounded-[2rem] font-black text-center uppercase text-sm italic shadow-md"></div>
-            
-            <div id="published-status-msg" class="hidden p-10 text-center bg-white rounded-[3rem] border-4 border-dashed border-slate-200">
-                <p class="text-slate-400 font-black uppercase italic">Aktuálně připravujeme nové menu.<br>Zkus to prosím za chvíli! 👨‍🍳</p>
-            </div>
-
-            <div id="user-menu-grid" class="grid md:grid-cols-2 gap-8">
-                <div><div id="list-current"></div></div>
-                <div><div id="list-next"></div></div>
-            </div>
-            
-            <div id="sticky-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50 bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-green-500 flex justify-between items-center">
-                <span id="total-price" class="text-3xl font-black text-green-600">0 Kč</span>
-                <button onclick="submitOrder()" class="bg-green-600 text-white px-10 py-4 rounded-2xl font-black uppercase shadow-lg">Uložit</button>
-            </div>
+            <div id="published-status-msg" class="hidden p-10 text-center bg-white rounded-[3rem] border-4 border-dashed border-slate-200"><p class="text-slate-400 font-black uppercase italic">Aktuálně připravujeme nové menu...</p></div>
+            <div id="user-menu-grid" class="grid md:grid-cols-2 gap-8"><div id="list-current"></div><div id="list-next"></div></div>
+            <div id="sticky-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50 bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-green-500 flex justify-between items-center"><span id="total-price" class="text-3xl font-black text-green-600">0 Kč</span><button onclick="submitOrder()" class="bg-green-600 text-white px-10 py-4 rounded-2xl font-black uppercase shadow-lg">Uložit</button></div>
         </div>
     </section>
 
@@ -112,81 +91,135 @@
         function secureView(v) { if(prompt("Heslo:") === ADMIN_PASS) switchView(v); }
         function switchView(v) { document.querySelectorAll('section').forEach(s => s.classList.add('hidden')); document.getElementById('view-' + v).classList.remove('hidden'); if(v === 'admin') renderAdmin(); if(v === 'orders') renderKitchen(); }
 
-        // --- ADMIN: MANIPULACE S JÍDLY ---
-        async function renderAdmin() { 
+        async function renderAdmin() {
             const { data } = await _supabase.from('meals').select('*').order('name');
             globalMeals = data || [];
             renderLibraryUI();
-            await Promise.all([renderAdminMenu(), renderFirms(), renderCustomers()]);
+            await renderPlanner();
         }
 
+        // --- PLÁNOVAČ (DVOU-SLOUPCOVÝ) ---
+        async function renderPlanner() {
+            const { data: menu } = await _supabase.from('meal_templates').select('*');
+            
+            const buildColumn = (week) => {
+                return DNY.map(den => {
+                    const mealsInDay = menu?.filter(m => m.day === den && m.week === week) || [];
+                    return `
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-black text-[10px] uppercase text-slate-400">${den}</span>
+                            </div>
+                            <div class="space-y-1 mb-3">
+                                ${mealsInDay.map(m => `
+                                    <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl text-[11px] font-bold border">
+                                        <span class="${m.category === 'Polévka' ? 'text-blue-600' : 'text-slate-800'}">${m.name}</span>
+                                        <button onclick="delPlan('${m.id}')" class="text-red-400 px-2 font-black">✕</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="relative">
+                                <input type="text" placeholder="🔍 Přidat jídlo..." 
+                                    oninput="searchMeal(this, '${den}', '${week}')"
+                                    class="w-full p-2 rounded-xl bg-slate-100 border-none text-[11px] font-bold focus:ring-2 focus:ring-orange-500">
+                                <div id="results-${week}-${den}" class="search-results hidden shadow-2xl border"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            document.getElementById('admin-plan-current').innerHTML = buildColumn('current');
+            document.getElementById('admin-plan-next').innerHTML = buildColumn('next');
+        }
+
+        // --- HLEDÁNÍ A PŘIDÁVÁNÍ ---
+        function searchMeal(input, den, week) {
+            const query = input.value.toLowerCase();
+            const resultsDiv = document.getElementById(`results-${week}-${den}`);
+            if (query.length < 1) { resultsDiv.classList.add('hidden'); return; }
+
+            const filtered = globalMeals.filter(m => m.name.toLowerCase().includes(query));
+            if (filtered.length > 0) {
+                resultsDiv.classList.remove('hidden');
+                resultsDiv.innerHTML = filtered.map(m => `
+                    <div onclick="addMealDirect('${m.id}', '${den}', '${week}')" 
+                         class="p-3 hover:bg-orange-50 border-b cursor-pointer flex justify-between items-center">
+                        <span class="font-bold text-xs">${m.name}</span>
+                        <span class="text-[9px] bg-slate-100 px-2 py-1 rounded-lg uppercase font-black">${m.category}</span>
+                    </div>
+                `).join('');
+            } else {
+                resultsDiv.classList.add('hidden');
+            }
+        }
+
+        async function addMealDirect(libId, den, week) {
+            const lib = globalMeals.find(m => m.id === libId);
+            await _supabase.from('meal_templates').insert([{ 
+                name: lib.name, description: lib.description, category: lib.category, day: den, week: week 
+            }]);
+            renderPlanner();
+        }
+
+        async function delPlan(id) { await _supabase.from('meal_templates').delete().eq('id', id); renderPlanner(); }
+
+        // --- SKLAD ---
         function renderLibraryUI() {
             document.getElementById('library-list').innerHTML = globalMeals.map(m => `
-                <div class="bg-white p-3 rounded-2xl border shadow-sm flex flex-col justify-between">
-                    <p class="font-bold text-[11px] leading-tight mb-2">${m.name}</p>
-                    <div class="space-y-1">
-                        <select onchange="addMealToPlan('${m.id}', this.value, 'current')" class="text-[9px] border rounded p-1 font-bold w-full bg-slate-50"><option>➔ Tento T.</option>${DNY.map(d=>`<option value="${d}">${d}</option>`)}</select>
-                        <select onchange="addMealToPlan('${m.id}', this.value, 'next')" class="text-[9px] border rounded p-1 font-bold w-full bg-orange-50"><option>➔ Příští T.</option>${DNY.map(d=>`<option value="${d}">${d}</option>`)}</select>
-                        <div class="flex gap-1 mt-1">
-                            <button onclick="prepMealEdit('${m.id}')" class="text-[7px] bg-slate-100 p-1 rounded font-black uppercase w-full">Upravit</button>
-                            <button onclick="delLib('${m.id}')" class="text-[7px] text-red-400 p-1 rounded font-black uppercase w-full">Smazat</button>
-                        </div>
+                <div class="bg-slate-700 p-3 rounded-2xl border border-slate-600 flex flex-col justify-between">
+                    <p class="font-bold text-[10px] leading-tight mb-2 truncate">${m.name}</p>
+                    <div class="flex gap-1">
+                        <button onclick="prepMealEdit('${m.id}')" class="text-[8px] bg-slate-600 p-2 rounded-lg font-black uppercase w-full">Edit</button>
+                        <button onclick="delLib('${m.id}')" class="text-[8px] text-red-400 p-2 rounded-lg font-black uppercase w-full">✕</button>
                     </div>
                 </div>`).join("");
         }
 
-        async function addMealToPlan(libId, den, week) {
-            if(!den || den.includes("➔")) return;
-            const lib = globalMeals.find(m => m.id === libId);
-            await _supabase.from('meal_templates').insert([{ name: lib.name, description: lib.description, category: lib.category, day: den, week: week }]);
-            renderAdminMenu();
+        async function saveMeal() {
+            const id = document.getElementById('edit-meal-id').value, n = document.getElementById('m-name').value, d = document.getElementById('m-desc').value, c = document.getElementById('m-cat').value;
+            if(!n) return;
+            if(id) await _supabase.from('meals').update({ name: n, description: d, category: c }).eq('id', id);
+            else await _supabase.from('meals').insert([{ name: n, description: d, category: c }]);
+            document.getElementById('edit-meal-id').value = ""; document.getElementById('btn-meal-save').innerText = "Uložit";
+            document.getElementById('m-name').value = ""; document.getElementById('m-desc').value = ""; renderAdmin();
         }
-
-        async function renderAdminMenu() {
-            const { data } = await _supabase.from('meal_templates').select('*').order('day');
-            document.getElementById('admin-menu-plan').innerHTML = ['current', 'next'].map(w => `
-                <div class="bg-white p-4 rounded-3xl border shadow-sm">
-                    <h4 class="font-black text-[10px] text-slate-400 mb-2 uppercase text-center">${w==='current'?'Tento týden':'Příští týden'}</h4>
-                    <div class="space-y-1">${data?.filter(m => m.week === w).map(m => `<div class="flex justify-between text-[11px] bg-slate-50 p-2 rounded-xl font-bold border"><span>${m.day}: ${m.name}</span><button onclick="delPlan('${m.id}')" class="text-red-500 font-black px-2">✕</button></div>`).join("") || "<p class='text-center text-[9px] py-2 text-slate-300 italic'>Menu není navoleno</p>"}</div>
-                </div>`).join("");
+        function prepMealEdit(id) {
+            const m = globalMeals.find(x => x.id === id);
+            document.getElementById('edit-meal-id').value = m.id; document.getElementById('m-name').value = m.name;
+            document.getElementById('m-desc').value = m.description; document.getElementById('m-cat').value = m.category;
+            document.getElementById('btn-meal-save').innerText = "Aktualizovat";
         }
+        async function delLib(id) { if(confirm("Smazat ze skladu?")) { await _supabase.from('meals').delete().eq('id', id); renderAdmin(); } }
 
-        // --- PUBLIKACE ---
-        function publishMenu() {
-            if(confirm("Schválit a ukázat menu zákazníkům?")) {
-                localStorage.setItem('menu_published', 'true');
-                alert("Menu bylo publikováno!");
-                if(currentUser) renderUserMenu();
+        // --- PUBLIKACE A TÝDNY ---
+        function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Menu publikováno!"); if(currentUser) renderUserMenu(); }
+        async function rolloverWeek() {
+            if(confirm("Překlopit týden? (Smaže objednávky, posune menu)")) {
+                localStorage.setItem('menu_published', 'false');
+                await _supabase.from('orders').delete().neq('user_name', '');
+                await _supabase.from('meal_templates').delete().eq('week', 'current');
+                await _supabase.from('meal_templates').update({ week: 'current' }).eq('week', 'next');
+                renderAdmin();
             }
         }
 
-        // --- ZÁKAZNÍK ---
+        // --- ZÁKAZNICKÁ ČÁST (Login & Objednávky) ---
         async function userLogin() {
             const sel = document.getElementById('user-select'), pin = document.getElementById('user-pin-input').value, opt = sel.options[sel.selectedIndex];
             if(opt && pin === opt.dataset.pin) {
                 currentUser = { name: opt.value, firm: opt.dataset.firm, pb: Number(opt.dataset.pb), ps: Number(opt.dataset.ps) };
                 document.getElementById('active-user-display').innerText = currentUser.name + " (" + currentUser.firm + ")";
-                document.getElementById('user-login').classList.add('hidden');
-                document.getElementById('user-order-zone').classList.remove('hidden');
-                await loadOrderHistory();
-                renderUserMenu();
+                document.getElementById('user-login').classList.add('hidden'); document.getElementById('user-order-zone').classList.remove('hidden');
+                await loadOrderHistory(); renderUserMenu();
             } else alert("Chybný PIN!");
         }
 
         async function renderUserMenu() {
             const isPub = localStorage.getItem('menu_published') === 'true';
             const { data: meals } = await _supabase.from('meal_templates').select('*');
-            
-            if(!isPub) {
-                document.getElementById('published-status-msg').classList.remove('hidden');
-                document.getElementById('user-menu-grid').classList.add('hidden');
-                document.getElementById('sticky-bar').classList.add('hidden');
-                return;
-            }
-
-            document.getElementById('published-status-msg').classList.add('hidden');
-            document.getElementById('user-menu-grid').classList.remove('hidden');
-            document.getElementById('sticky-bar').classList.remove('hidden');
+            if(!isPub) { document.getElementById('published-status-msg').classList.remove('hidden'); document.getElementById('user-menu-grid').classList.add('hidden'); document.getElementById('sticky-bar').classList.add('hidden'); return; }
+            document.getElementById('published-status-msg').classList.add('hidden'); document.getElementById('user-menu-grid').classList.remove('hidden'); document.getElementById('sticky-bar').classList.remove('hidden');
 
             const draw = (w, id) => {
                 const c = document.getElementById(id);
@@ -197,9 +230,7 @@
                         let h = `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><h3 class="font-black uppercase text-[10px] text-slate-400 mb-2">${den}</h3>`;
                         dm.forEach(m => {
                             const u = `${m.name} (${den})`; const isS = selectedItems[u]; const p = m.category === 'Polévka' ? currentUser.ps : currentUser.pb;
-                            h += `<div onclick="toggleSelect('${u}', ${p})" class="p-3 rounded-2xl border-2 mb-2 cursor-pointer transition-all ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between font-bold text-xs"><span>${m.name}</span><span class="text-orange-500">${p} Kč</span></div>
-                            </div>`;
+                            h += `<div onclick="toggleSelect('${u}', ${p})" class="p-3 rounded-2xl border-2 mb-2 cursor-pointer transition-all ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}"><div class="flex justify-between font-bold text-xs"><span>${m.name}</span><span class="text-orange-500">${p} Kč</span></div></div>`;
                         });
                         c.innerHTML += h + `</div>`;
                     }
@@ -208,72 +239,12 @@
             draw('current', 'list-current'); draw('next', 'list-next');
         }
 
-        // --- POMOCNÉ FUNKCE (EDITACE & MAZÁNÍ) ---
-        function prepMealEdit(id) {
-            const m = globalMeals.find(x => x.id === id);
-            document.getElementById('edit-meal-id').value = m.id; document.getElementById('m-name').value = m.name;
-            document.getElementById('m-desc').value = m.description; document.getElementById('m-cat').value = m.category;
-            document.getElementById('btn-meal-save').innerText = "Aktualizovat";
-        }
-        async function saveMeal() {
-            const id = document.getElementById('edit-meal-id').value, n = document.getElementById('m-name').value, d = document.getElementById('m-desc').value, c = document.getElementById('m-cat').value;
-            if(!n) return;
-            if(id) await _supabase.from('meals').update({ name: n, description: d, category: c }).eq('id', id);
-            else await _supabase.from('meals').insert([{ name: n, description: d, category: c }]);
-            document.getElementById('edit-meal-id').value = ""; document.getElementById('btn-meal-save').innerText = "Uložit";
-            document.getElementById('m-name').value = ""; document.getElementById('m-desc').value = ""; renderAdmin();
-        }
-
-        async function prepFirmEdit(id) {
-            const { data: f } = await _supabase.from('firms').select('*').eq('id', id).single();
-            document.getElementById('edit-firm-id').value = f.id; document.getElementById('f-name').value = f.name;
-            document.getElementById('f-bowl').value = f.custom_price_bowl; document.getElementById('f-soup').value = f.custom_price_soup;
-            document.getElementById('btn-firm-save').innerText = "Aktualizovat";
-        }
-        async function saveFirm() {
-            const id = document.getElementById('edit-firm-id').value, n = document.getElementById('f-name').value, b = document.getElementById('f-bowl').value, s = document.getElementById('f-soup').value;
-            if(id) await _supabase.from('firms').update({ name: n, custom_price_bowl: b, custom_price_soup: s }).eq('id', id);
-            else await _supabase.from('firms').insert([{ name: n, custom_price_bowl: b, custom_price_soup: s }]);
-            document.getElementById('edit-firm-id').value = ""; document.getElementById('btn-firm-save').innerText = "Uložit";
-            document.getElementById('f-name').value = ""; renderFirms();
-        }
-
-        async function prepCustEdit(id) {
-            const { data: c } = await _supabase.from('customers').select('*').eq('id', id).single();
-            document.getElementById('edit-cust-id').value = c.id; document.getElementById('c-name').value = c.name;
-            document.getElementById('c-firm').value = c.firm_name; document.getElementById('c-pin').value = c.pin;
-            document.getElementById('btn-cust-save').innerText = "Aktualizovat";
-        }
-        async function saveCustomer() {
-            const id = document.getElementById('edit-cust-id').value, n = document.getElementById('c-name').value, f = document.getElementById('c-firm').value, p = document.getElementById('c-pin').value;
-            if(id) await _supabase.from('customers').update({ name: n, firm_name: f, pin: p }).eq('id', id);
-            else await _supabase.from('customers').insert([{ name: n, firm_name: f, pin: p }]);
-            document.getElementById('edit-cust-id').value = ""; document.getElementById('btn-cust-save').innerText = "Uložit";
-            document.getElementById('c-name').value = ""; document.getElementById('c-pin').value = ""; renderCustomers();
-        }
-
-        // --- OSTATNÍ LOGIKA ---
-        async function renderFirms() {
-            const { data } = await _supabase.from('firms').select('*').order('name');
-            document.getElementById('admin-firms-list').innerHTML = data?.map(f => `<div class="flex justify-between bg-slate-50 p-2 rounded-xl border text-[10px] font-bold"><span>${f.name}</span><div class="flex gap-2"><button onclick="prepFirmEdit('${f.id}')" class="text-blue-500 underline uppercase">Edit</button><button onclick="delFirm('${f.id}')" class="text-red-500">✕</button></div></div>`).join("");
-            const sel = document.getElementById('c-firm'); sel.innerHTML = ''; data?.forEach(f => sel.innerHTML += `<option value="${f.name}">${f.name}</option>`);
-        }
-        async function renderCustomers() {
-            const { data } = await _supabase.from('customers').select('*').order('name');
-            document.getElementById('admin-customers-list').innerHTML = data?.map(c => `<div class="flex justify-between bg-slate-50 p-2 rounded-xl border text-[10px] font-bold"><span>${c.name}</span><div class="flex gap-2"><button onclick="prepCustEdit('${c.id}')" class="text-orange-500 underline uppercase">Edit</button><button onclick="delCust('${c.id}')" class="text-red-500">✕</button></div></div>`).join("");
-            initLogin();
-        }
-
-        async function delLib(id) { if(confirm("Smazat?")) { await _supabase.from('meals').delete().eq('id', id); renderAdmin(); } }
-        async function delPlan(id) { await _supabase.from('meal_templates').delete().eq('id', id); renderAdminMenu(); }
-        async function delFirm(id) { if(confirm("Smazat?")) { await _supabase.from('firms').delete().eq('id', id); renderFirms(); } }
-        async function delCust(id) { if(confirm("Smazat?")) { await _supabase.from('customers').delete().eq('id', id); renderCustomers(); } }
-
         function toggleSelect(name, price) { if(selectedItems[name]) delete selectedItems[name]; else selectedItems[name] = { name, price }; updateTotal(); renderUserMenu(); }
         function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
         async function loadOrderHistory() { const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); selectedItems = {}; if(data?.[0]?.items) data[0].items.split(", ").forEach(it => { if(it) selectedItems[it] = { name: it, price: it.includes('Polévka') ? currentUser.ps : currentUser.pb }; }); updateTotal(); }
-        async function submitOrder() { const f = Object.keys(selectedItems).join(", "); const { data: ex } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); if (ex?.length > 0) await _supabase.from('orders').update({ items: f, user_firm: currentUser.firm }).eq('id', ex[0].id); else await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: f }]); alert("Objednávka uložena!"); }
+        async function submitOrder() { const f = Object.keys(selectedItems).join(", "); const { data: ex } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); if (ex?.length > 0) await _supabase.from('orders').update({ items: f, user_firm: currentUser.firm }).eq('id', ex[0].id); else await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: f }]); alert("Uloženo!"); }
 
+        // KUCHYŇ
         async function renderKitchen() {
             const { data: orders } = await _supabase.from('orders').select('*');
             const cont = document.getElementById('view-orders'); cont.innerHTML = '<h2 class="text-3xl font-black uppercase italic text-center mb-6 pt-4">Kuchyňský přehled</h2>';
@@ -288,17 +259,6 @@
                     cont.innerHTML += h + `</div></div></div>`;
                 }
             });
-        }
-
-        async function rolloverWeek() {
-            if(confirm("POZOR: Smaže objednávky, posune menu a SCHOVÁ menu před zákazníky! Pokračovat?")) {
-                localStorage.setItem('menu_published', 'false');
-                await _supabase.from('orders').delete().neq('user_name', '');
-                await _supabase.from('meal_templates').delete().eq('week', 'current');
-                await _supabase.from('meal_templates').update({ week: 'current' }).eq('week', 'next');
-                alert("Hotovo. Menu je nyní skryté a čeká na vaši přípravu.");
-                renderAdmin();
-            }
         }
 
         async function initLogin() {
