@@ -89,17 +89,23 @@
 
     <section id="view-user" class="max-w-4xl mx-auto p-4">
         <div id="user-login" class="max-w-md mx-auto bg-white p-10 rounded-[3.5rem] shadow-2xl text-center mt-10">
-            <h2 class="text-2xl font-black mb-6 text-orange-500 uppercase italic">Přihlaš se</h2>
-            <select id="user-select" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-4 border-none text-center"></select>
-            <input id="user-pin-input" type="password" inputmode="numeric" placeholder="PIN" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-6 text-center text-4xl tracking-widest">
-            <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-3xl font-black text-xl uppercase shadow-lg">Vstoupit</button>
-        </div>
-        <div id="user-order-zone" class="hidden space-y-6">
-            <div id="active-user-display" class="bg-blue-600 text-white p-5 rounded-[2rem] font-black text-center uppercase text-sm italic shadow-md"></div>
-            <div id="published-status-msg" class="hidden p-10 text-center bg-white rounded-[3rem] border-4 border-dashed border-slate-200 text-slate-400 font-black uppercase italic">Menu se připravuje...</div>
-            <div id="user-menu-grid" class="grid md:grid-cols-2 gap-8"><div id="list-current"></div><div id="list-next"></div></div>
-            <div id="sticky-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50 bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-green-500 flex justify-between items-center"><span id="total-price" class="text-3xl font-black text-green-600">0 Kč</span><button onclick="submitOrder()" class="bg-green-600 text-white px-10 py-4 rounded-2xl font-black uppercase shadow-lg">Uložit</button></div>
-        </div>
+    <h2 class="text-2xl font-black mb-6 text-orange-500 uppercase italic">Přihlaš se</h2>
+    
+    <div class="relative mb-4">
+        <input id="user-search-input" type="text" placeholder="Napiš své jméno..." 
+               oninput="searchUser(this)" 
+               class="w-full p-5 rounded-2xl bg-slate-100 font-bold border-none text-center">
+        <div id="user-search-results" class="search-results hidden absolute w-full mt-2 left-0 shadow-2xl"></div>
+    </div>
+
+    <input id="selected-user-data" type="hidden">
+
+    <input id="user-pin-input" type="password" inputmode="numeric" placeholder="PIN" 
+           class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-6 text-center text-4xl tracking-widest">
+    
+    <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-3xl font-black text-xl uppercase shadow-lg">Vstoupit</button>
+</div>
+
     </section>
 
     <script>
@@ -247,6 +253,84 @@
         alert("Chybný PIN!");
     }
 }
+        let allCustomers = []; // Pomocná proměnná pro vyhledávání
+
+// Upravený initLogin, který si uloží seznam uživatelů
+async function initLogin() {
+    const { data: c } = await _supabase.from('customers').select('*').order('name');
+    const { data: f } = await _supabase.from('firms').select('*');
+    
+    // Propojíme uživatele s cenami jejich firem a uložíme do paměti
+    allCustomers = c?.map(p => {
+        const fr = f?.find(x => x.name.trim() === p.firm_name.trim());
+        return {
+            ...p,
+            pb: fr ? fr.custom_price_bowl : 169,
+            ps: fr ? fr.custom_price_soup : 49
+        };
+    }) || [];
+}
+
+function searchUser(input) {
+    const q = input.value.toLowerCase();
+    const res = document.getElementById('user-search-results');
+    if (q.length < 1) { res.classList.add('hidden'); return; }
+
+    const filtered = allCustomers.filter(u => u.name.toLowerCase().includes(q));
+    
+    if (filtered.length > 0) {
+        res.classList.remove('hidden');
+        res.innerHTML = filtered.map(u => `
+            <div onclick="selectUserForLogin('${u.name}', '${u.pin}', '${u.firm_name}', ${u.pb}, ${u.ps})" 
+                 class="p-4 hover:bg-orange-50 border-b cursor-pointer font-bold text-sm flex justify-between">
+                <span>${u.name}</span>
+                <span class="text-[10px] text-slate-400 uppercase">${u.firm_name}</span>
+            </div>
+        `).join('');
+    } else {
+        res.innerHTML = '<div class="p-4 text-slate-400 text-xs">Uživatel nenalezen</div>';
+        res.classList.remove('hidden');
+    }
+}
+
+function selectUserForLogin(name, pin, firm, pb, ps) {
+    // Zapíšeme vybraná data do "neviditelných" míst a do inputu
+    document.getElementById('user-search-input').value = name;
+    const hiddenInput = document.getElementById('selected-user-data');
+    hiddenInput.dataset.name = name;
+    hiddenInput.dataset.pin = pin;
+    hiddenInput.dataset.firm = firm;
+    hiddenInput.dataset.pb = pb;
+    hiddenInput.dataset.ps = ps;
+    
+    document.getElementById('user-search-results').classList.add('hidden');
+}
+
+// UPRAVENÝ userLogin pro nové hledání
+async function userLogin() {
+    const hidden = document.getElementById('selected-user-data');
+    const pinInput = document.getElementById('user-pin-input').value;
+    
+    if (hidden.dataset.name && pinInput === hidden.dataset.pin) {
+        currentUser = { 
+            name: hidden.dataset.name, 
+            firm: hidden.dataset.firm, 
+            pb: Number(hidden.dataset.pb), 
+            ps: Number(hidden.dataset.ps) 
+        };
+
+        document.getElementById('user-login').classList.add('hidden'); 
+        document.getElementById('user-order-zone').classList.remove('hidden');
+        document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name} (${currentUser.firm})`;
+        
+        selectedItems = {}; 
+        await loadOrderHistory(); 
+        renderUserMenu();
+    } else {
+        alert("Chybné jméno nebo PIN!");
+    }
+}
+
 
         async function renderUserMenu() {
     const isPub = localStorage.getItem('menu_published') === 'true';
