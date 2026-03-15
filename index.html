@@ -210,7 +210,6 @@
     initLogin();
 }
 
-        }
         async function saveCustomer() {
             const id = document.getElementById('edit-cust-id').value, n = document.getElementById('c-name').value, f = document.getElementById('c-firm').value, p = document.getElementById('c-pin').value;
             if(id) await _supabase.from('customers').update({ name: n, firm_name: f, pin: p }).eq('id', id);
