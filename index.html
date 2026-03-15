@@ -237,40 +237,74 @@
 
         // --- ZÁKAZNÍK ---
         async function userLogin() {
-            const sel = document.getElementById('user-select'), pin = document.getElementById('user-pin-input').value, opt = sel.options[sel.selectedIndex];
-            if(opt && pin === opt.dataset.pin) {
-                currentUser = { name: opt.value, firm: opt.dataset.firm, pb: Number(opt.dataset.pb), ps: Number(opt.dataset.ps) };
-                document.getElementById('user-login').classList.add('hidden'); document.getElementById('user-order-zone').classList.remove('hidden');
-                document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name}`;
-                await loadOrderHistory(); renderUserMenu();
-            } else alert("Chybný PIN!");
-        }
+    const sel = document.getElementById('user-select');
+    const pin = document.getElementById('user-pin-input').value;
+    const opt = sel.options[sel.selectedIndex];
+
+    if (opt && pin === opt.dataset.pin) {
+        // Zde načteme ceny přímo z datových atributů vybraného jména
+        currentUser = { 
+            name: opt.value, 
+            firm: opt.dataset.firm, 
+            pb: parseFloat(opt.dataset.pb) || 169, // cena misky z tabulky firmy
+            ps: parseFloat(opt.dataset.ps) || 49    // cena polévky z tabulky firmy
+        };
+        
+        document.getElementById('user-login').classList.add('hidden'); 
+        document.getElementById('user-order-zone').classList.remove('hidden');
+        document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name} (${currentUser.firm})`;
+        
+        await loadOrderHistory(); 
+        renderUserMenu();
+    } else {
+        alert("Chybný PIN!");
+    }
+}
+
 
         async function renderUserMenu() {
-            const isPub = localStorage.getItem('menu_published') === 'true';
-            const { data: meals } = await _supabase.from('meal_templates').select('*');
-            if(!isPub) { document.getElementById('published-status-msg').classList.remove('hidden'); document.getElementById('user-menu-grid').classList.add('hidden'); return; }
-            document.getElementById('published-status-msg').classList.add('hidden'); document.getElementById('user-menu-grid').classList.remove('hidden');
-            
-            const draw = (w, id) => {
-                const c = document.getElementById(id); c.innerHTML = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-xs mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
-                DNY.forEach(den => {
-                    const dm = meals?.filter(m => m.day === den && m.week === w);
-                    if(dm?.length) {
-                        let h = `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><h3 class="font-black uppercase text-[10px] text-slate-400 mb-2">${den}</h3>`;
-                        dm.forEach(m => {
-                            const u = `${m.name} (${den})`; const isS = selectedItems[u]; const p = m.category === 'Polévka' ? currentUser.ps : currentUser.pb;
-                            h += `<div onclick="toggleSelect('${u}', ${p})" class="p-3 rounded-2xl border-2 mb-2 transition-all cursor-pointer ${isS ? 'border-green-500 bg-green-50 shadow-inner' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between font-bold text-xs"><span>${m.name}</span><span>${p} Kč</span></div>
-                                <div class="text-[9px] text-slate-400 italic">${m.description || ''}</div>
-                            </div>`;
-                        });
-                        c.innerHTML += h + `</div>`;
-                    }
+    const isPub = localStorage.getItem('menu_published') === 'true';
+    const { data: meals } = await _supabase.from('meal_templates').select('*');
+    
+    if(!isPub) { 
+        document.getElementById('published-status-msg').classList.remove('hidden'); 
+        document.getElementById('user-menu-grid').classList.add('hidden'); 
+        return; 
+    }
+    
+    document.getElementById('published-status-msg').classList.add('hidden'); 
+    document.getElementById('user-menu-grid').classList.remove('hidden');
+
+    const draw = (w, id) => {
+        const c = document.getElementById(id); 
+        c.innerHTML = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-xs mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
+        
+        DNY.forEach(den => {
+            const dm = meals?.filter(m => m.day === den && m.week === w);
+            if(dm?.length) {
+                let h = `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><h3 class="font-black uppercase text-[10px] text-slate-400 mb-2">${den}</h3>`;
+                dm.forEach(m => {
+                    const u = `${m.name} (${den})`; 
+                    const isS = selectedItems[u]; 
+                    
+                    // TADY SE DĚJE TO KOUZLO:
+                    const p = m.category === 'Polévka' ? currentUser.ps : currentUser.pb;
+                    
+                    h += `<div onclick="toggleSelect('${u}', ${p})" class="p-3 rounded-2xl border-2 mb-2 transition-all cursor-pointer ${isS ? 'border-green-500 bg-green-50 shadow-inner' : 'bg-slate-50 border-transparent'}">
+                        <div class="flex justify-between font-bold text-xs">
+                            <span>${m.name}</span>
+                            <span class="text-orange-600">${p} Kč</span>
+                        </div>
+                        <div class="text-[9px] text-slate-400 italic">${m.description || ''}</div>
+                    </div>`;
                 });
-            };
-            draw('current', 'list-current'); draw('next', 'list-next');
-        }
+                c.innerHTML += h + `</div>`;
+            }
+        });
+    };
+    draw('current', 'list-current'); 
+    draw('next', 'list-next');
+}
 
         function toggleSelect(n, p) { if(selectedItems[n]) delete selectedItems[n]; else selectedItems[n] = { name: n, price: p }; updateTotal(); renderUserMenu(); }
         function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
