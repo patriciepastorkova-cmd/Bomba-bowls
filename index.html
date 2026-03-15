@@ -268,19 +268,39 @@
 
         // --- INICIALIZACE ROLETY SE JMÉNY ---
         async function initLogin() {
-            const { data: c } = await _supabase.from('customers').select('*').order('name');
-            const { data: f } = await _supabase.from('firms').select('*');
-            const sel = document.getElementById('user-select');
-            if(sel) {
-                sel.innerHTML = '<option value="">-- JMÉNO --</option>';
-                c?.forEach(p => {
-                    const fr = f?.find(x => x.name.trim().toLowerCase() === (p.firm_name || "").trim().toLowerCase());
-                    const cB = fr ? fr.custom_price_bowl : 169;
-                    const cS = fr ? fr.custom_price_soup : 49;
-                    sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${cB}" data-ps="${cS}">${p.name}</option>`;
-                });
+    // 1. Načteme čerstvá data z obou tabulek
+    const { data: c } = await _supabase.from('customers').select('*').order('name');
+    const { data: f } = await _supabase.from('firms').select('*');
+    const sel = document.getElementById('user-select');
+    
+    if(sel) {
+        sel.innerHTML = '<option value="">-- JMÉNO --</option>';
+        c?.forEach(p => {
+            // Najdeme firmu - odstraníme mezery pro jistotu
+            const firmaJmeno = (p.firm_name || "").trim().toLowerCase();
+            const fr = f?.find(x => (x.name || "").trim().toLowerCase() === firmaJmeno);
+            
+            // TADY JE TA OPRAVA: Explicitně saháme pro tvoje sloupce
+            // Pokud v databázi u firmy nic není, dáme 169/49
+            let cB = 169;
+            let cS = 49;
+
+            if (fr) {
+                // Použijeme tvé názvy sloupců ze Supabase
+                cB = fr.custom_price_bowl !== null ? fr.custom_price_bowl : 169;
+                cS = fr.custom_price_soup !== null ? fr.custom_price_soup : 49;
             }
-        }
+            
+            // Vložíme to do roletky - tady se tvoří ta věta pro login
+            sel.innerHTML += `<option value="${p.name}" 
+                data-pin="${p.pin}" 
+                data-firm="${p.firm_name}" 
+                data-pb="${cB}" 
+                data-ps="${cS}">${p.name}</option>`;
+        });
+    }
+}
+
         
         // Spuštění při načtení
         initLogin();
