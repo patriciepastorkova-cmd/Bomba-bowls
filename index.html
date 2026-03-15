@@ -411,13 +411,21 @@
             });
         }
 
-        function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
-        async function rolloverWeek() { if(confirm("Reset objednávek a posun menu?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name', ''); await _supabase.from('meal_templates').delete().eq('week', 'current'); await _supabase.from('meal_templates').update({ week: 'current' }).eq('week', 'next'); renderAdmin(); } }
-        
+            function publishMenu() { 
+        localStorage.setItem('menu_published', 'true'); 
+        alert("Zveřejněno!"); 
+    }
 
+    async function rolloverWeek() { 
+        if(confirm("Reset objednávek a posun menu?")) { 
+            localStorage.setItem('menu_published', 'false'); 
+            await _supabase.from('orders').delete().neq('user_name', ''); 
+            await _supabase.from('meal_templates').delete().eq('week', 'current'); 
+            await _supabase.from('meal_templates').update({ week: 'current' }).eq('week', 'next'); 
+            renderAdmin(); 
+        } 
+    }
+</script>
 
-        initLogin();
-        window.onload = () => { initLogin(); };
-    </script>
 </body>
 </html>
