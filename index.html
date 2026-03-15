@@ -191,9 +191,25 @@
         async function delFirm(id) { if(confirm("Smazat?")) { await _supabase.from('firms').delete().eq('id', id); renderFirms(); } }
 
         async function renderCustomers() {
-            const { data } = await _supabase.from('customers').select('*').order('name');
-            document.getElementById('admin-customers-list').innerHTML = data?.map(c => `<div class="flex justify-between bg-slate-50 p-2 rounded-xl border font-bold text-[10px]"><span>${c.name} (${c.firm_name})</span><div class="flex gap-2"><button onclick="prepCustEdit('${c.id}')" class="text-orange-500">Edit</button><button onclick="delCust('${c.id}')" class="text-red-500">✕</button></div></div>`).join("");
-            initLogin();
+    const { data: custs } = await _supabase.from('customers').select('*').order('name');
+    const { data: firms } = await _supabase.from('firms').select('*');
+    
+    document.getElementById('admin-customers-list').innerHTML = custs?.map(c => {
+        // Tady zjistíme, jestli aplikace tu firmu vidí
+        const f = firms?.find(x => x.name === c.firm_name);
+        const cenaInfo = f ? `✅ B:${f.custom_price_bowl} S:${f.custom_price_soup}` : `❌ Firma nenalezena (bere základ)`;
+        
+        return `<div class="flex justify-between bg-slate-50 p-2 rounded-xl border font-bold text-[10px]">
+            <span>${c.name} (${c.firm_name}) <br> <span class="text-blue-500">${cenaInfo}</span></span>
+            <div class="flex gap-2">
+                <button onclick="prepCustEdit('${c.id}')" class="text-orange-500">Edit</button>
+                <button onclick="delCust('${c.id}')" class="text-red-500">✕</button>
+            </div>
+        </div>`;
+    }).join("");
+    initLogin();
+}
+
         }
         async function saveCustomer() {
             const id = document.getElementById('edit-cust-id').value, n = document.getElementById('c-name').value, f = document.getElementById('c-firm').value, p = document.getElementById('c-pin').value;
