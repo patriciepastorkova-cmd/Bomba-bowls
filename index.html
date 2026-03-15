@@ -229,19 +229,31 @@
         }
 
         async function initLogin() {
-            const { data: c } = await _supabase.from('customers').select('*').order('name');
-            const { data: f } = await _supabase.from('firms').select('*');
-            const sel = document.getElementById('user-select');
-            if(sel) {
-                sel.innerHTML = '<option value="">-- JMÉNO --</option>';
-                c?.forEach(p => {
-                    const fr = f?.find(x => x.name.trim().toLowerCase() === (p.firm_name || "").trim().toLowerCase());
-                    const cB = (fr && fr.custom_price_bowls) ? fr.custom_price_bowls : 169;
-                    const cS = (fr && fr.custom_price_soups) ? fr.custom_price_soups : 49;
-                    sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${cB}" data-ps="${cS}">${p.name}</option>`;
-                });
-            }
-        }
+    const { data: c } = await _supabase.from('customers').select('*').order('name');
+    const { data: f } = await _supabase.from('firms').select('*');
+    const sel = document.getElementById('user-select');
+    
+    if(sel) {
+        sel.innerHTML = '<option value="">-- JMÉNO --</option>';
+        c?.forEach(p => {
+            // Najdeme firmu podle jména (očištěno o mezery)
+            const fr = f?.find(x => x.name.trim().toLowerCase() === (p.firm_name || "").trim().toLowerCase());
+            
+            // LOGIKA CEN: 
+            // 1. Zkusíme vzít cenu z firmy (sloupce custom_price_bowls / soups)
+            // 2. Pokud tam není (null) nebo firma neexistuje, dáme tvých 149 / 19
+            const cB = (fr && fr.custom_price_bowls != null) ? fr.custom_price_bowls : 169;
+            const cS = (fr && fr.custom_price_soups != null) ? fr.custom_price_soups : 49;
+            
+            sel.innerHTML += `<option value="${p.name}" 
+                data-pin="${p.pin}" 
+                data-firm="${p.firm_name}" 
+                data-pb="${cB}" 
+                data-ps="${cS}">${p.name}</option>`;
+        });
+    }
+}
+
 
         async function renderKitchen() {
             const { data: orders } = await _supabase.from('orders').select('*');
