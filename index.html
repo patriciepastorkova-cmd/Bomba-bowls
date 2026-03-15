@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BOMBA BOWLS - Divadelní klub</title>
+    <title>BOMBA BOWLS - MASTER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -20,39 +20,16 @@
         </div>
     </nav>
 
-    <section id="view-admin" class="hidden max-w-4xl mx-auto p-4 space-y-6">
+    <section id="view-admin" class="hidden max-w-4xl mx-auto p-4 space-y-6 text-sm">
         <div class="bg-red-50 p-6 rounded-[2rem] border-2 border-red-100 text-center">
             <h3 class="font-black text-red-600 uppercase italic mb-3">Správa týdnů</h3>
             <button onclick="rolloverWeek()" class="bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs shadow-lg">➔ PŘEKLOPIT TÝDEN</button>
         </div>
 
         <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h3 class="font-black text-xs uppercase text-blue-600 mb-4 italic">Nová Firma</h3>
-            <div class="grid gap-2 text-sm">
-                <input id="f-name" placeholder="Název firmy" class="w-full p-4 bg-slate-50 rounded-xl font-bold">
-                <div class="grid grid-cols-2 gap-2">
-                    <input id="f-bowl" type="number" placeholder="Bowl Kč" class="p-4 bg-slate-50 rounded-xl font-bold">
-                    <input id="f-soup" type="number" placeholder="Soup Kč" class="p-4 bg-slate-50 rounded-xl font-bold">
-                </div>
-                <button onclick="addFirm()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase">+ Přidat firmu</button>
-            </div>
-            <div id="admin-firms-list" class="mt-4 space-y-1 text-xs"></div>
-        </div>
-
-        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h3 class="font-black text-xs uppercase text-orange-600 mb-4 italic">Nový Strávník</h3>
-            <div class="grid gap-2 text-sm">
-                <input id="c-name" placeholder="Jméno" class="w-full p-4 bg-slate-50 rounded-xl font-bold">
-                <select id="c-firm" class="w-full p-4 bg-slate-50 rounded-xl font-bold"></select>
-                <input id="c-pin" type="number" placeholder="PIN" class="w-full p-4 bg-slate-50 rounded-xl font-bold">
-                <button onclick="addCustomer()" class="w-full bg-orange-500 text-white py-4 rounded-xl font-black uppercase">+ Přidat PIN</button>
-            </div>
-            <div id="admin-customers-list" class="mt-4 space-y-1 text-xs"></div>
-        </div>
-
-        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h3 class="font-black text-xs uppercase text-green-600 mb-4 italic">Nové Jídlo</h3>
-            <div class="grid gap-2 text-sm">
+            <h3 id="meal-form-title" class="font-black text-xs uppercase text-green-600 mb-4 italic">Nové Jídlo</h3>
+            <div class="grid gap-2">
+                <input id="m-id" type="hidden">
                 <input id="m-name" placeholder="Název jídla" class="w-full p-4 bg-slate-50 rounded-xl font-bold">
                 <textarea id="m-desc" placeholder="Popis / Složení jídla" class="w-full p-4 bg-slate-50 rounded-xl font-bold h-20"></textarea>
                 <div class="grid grid-cols-3 gap-1">
@@ -66,22 +43,29 @@
                         <option value="current">Tento</option><option value="next">Příští</option>
                     </select>
                 </div>
-                <button onclick="addMeal()" class="w-full bg-green-600 text-white py-4 rounded-xl font-black uppercase">+ Přidat do menu</button>
+                <button id="m-btn" onclick="saveMeal()" class="w-full bg-green-600 text-white py-4 rounded-xl font-black uppercase shadow-md">+ Přidat do menu</button>
+                <button id="m-cancel" onclick="cancelEdit()" class="hidden w-full bg-gray-200 text-gray-600 py-2 rounded-xl font-bold uppercase text-[10px]">Zrušit úpravy</button>
             </div>
-            <div id="admin-meals-list" class="mt-4 space-y-2 text-xs"></div>
+            <div id="admin-meals-list" class="mt-6 space-y-2"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+            <h3 class="font-black text-xs uppercase text-blue-600 mb-4 italic">Firmy a Ceny</h3>
+            <div class="grid gap-2 mb-4">
+                <input id="f-name" placeholder="Název firmy" class="w-full p-4 bg-slate-50 rounded-xl font-bold">
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="f-bowl" type="number" placeholder="Bowl Kč" class="p-4 bg-slate-50 rounded-xl font-bold">
+                    <input id="f-soup" type="number" placeholder="Soup Kč" class="p-4 bg-slate-50 rounded-xl font-bold">
+                </div>
+                <button onclick="addFirm()" class="bg-blue-600 text-white py-4 rounded-xl font-black uppercase text-[10px]">+ Přidat firmu</button>
+            </div>
+            <div id="admin-firms-list" class="space-y-1 text-[11px]"></div>
         </div>
     </section>
 
     <section id="view-orders" class="hidden max-w-4xl mx-auto p-4 space-y-10">
-        <div>
-            <h2 class="text-2xl font-black uppercase italic text-slate-800 border-l-8 border-slate-300 pl-4 mb-6">Aktuální týden</h2>
-            <div id="kitchen-current" class="space-y-6"></div>
-        </div>
-        <hr class="border-t-4 border-dashed">
-        <div>
-            <h2 class="text-2xl font-black uppercase italic text-orange-600 border-l-8 border-orange-500 pl-4 mb-6">Příští týden</h2>
-            <div id="kitchen-next" class="space-y-6"></div>
-        </div>
+        <div><h2 class="text-2xl font-black uppercase italic text-slate-800 border-l-8 border-slate-300 pl-4 mb-6">Aktuální týden</h2><div id="kitchen-current" class="space-y-6"></div></div>
+        <div><h2 class="text-2xl font-black uppercase italic text-orange-600 border-l-8 border-orange-500 pl-4 mb-6">Příští týden</h2><div id="kitchen-next" class="space-y-6"></div></div>
     </section>
 
     <section id="view-user" class="max-w-4xl mx-auto p-4">
@@ -89,31 +73,26 @@
             <h2 class="text-2xl font-black mb-6 text-orange-500 uppercase italic">Přihlášení</h2>
             <select id="user-select" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-4 appearance-none"></select>
             <input id="user-pin-input" type="password" inputmode="numeric" placeholder="Tvůj PIN" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-6 text-center">
-            <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-2xl font-black text-xl uppercase shadow-lg">Vstoupit</button>
+            <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-2xl font-black text-xl uppercase">Vstoupit</button>
         </div>
 
         <div id="user-order-zone" class="hidden space-y-6">
             <div class="bg-blue-600 text-white p-5 rounded-[2rem] flex items-center justify-between shadow-lg">
-                <div class="flex items-center gap-4">
-                    <div class="bg-white text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-black">📞</div>
-                    <div><p class="text-[10px] font-bold uppercase opacity-80">Pomoc?</p><a href="tel:+420605285174" class="text-lg font-black italic">605 285 174</a></div>
-                </div>
-                <div class="text-right font-black italic text-xs uppercase" id="active-user-display"></div>
+                <div class="flex items-center gap-4 text-xs font-black italic"><a href="tel:+420605285174">📞 605 285 174</a></div>
+                <div id="active-user-display" class="font-black italic text-xs uppercase"></div>
             </div>
-
             <div class="grid md:grid-cols-2 gap-8 items-start">
                 <div class="space-y-4">
-                    <h2 class="bg-slate-200 text-slate-700 p-3 rounded-2xl text-center font-black uppercase italic text-xs tracking-widest shadow-sm">Tento týden <span id="week-num-curr"></span></h2>
+                    <h2 class="bg-slate-200 text-slate-700 p-3 rounded-2xl text-center font-black uppercase italic text-xs">Tento týden</h2>
                     <div id="list-current" class="space-y-4"></div>
                 </div>
                 <div class="space-y-4">
-                    <h2 class="bg-orange-500 text-white p-3 rounded-2xl text-center font-black uppercase italic text-xs tracking-widest shadow-md">Příští týden <span id="week-num-next"></span></h2>
+                    <h2 class="bg-orange-500 text-white p-3 rounded-2xl text-center font-black uppercase italic text-xs">Příští týden</h2>
                     <div id="list-next" class="space-y-4"></div>
                 </div>
             </div>
-            
             <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-40 bg-white p-6 rounded-[2.5rem] shadow-2xl border flex justify-between items-center">
-                <div><p class="text-[10px] font-black text-slate-400 uppercase italic">Celkem</p><span id="total-price" class="text-3xl font-black text-green-600">0 Kč</span></div>
+                <span id="total-price" class="text-3xl font-black text-green-600">0 Kč</span>
                 <button id="save-btn" onclick="submitOrder()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-lg">Uložit</button>
             </div>
         </div>
@@ -127,121 +106,86 @@
         const ADMIN_PASS = "bomba2026";
         let currentUser = null, selectedItems = {};
 
-        function getWeekNumber(d) { d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7)); var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1)); return Math.ceil((((d - yearStart) / 86400000) + 1)/7); }
-        function secureView(v) { if(prompt("Heslo:") === ADMIN_PASS) { switchView(v); } else { alert("Chyba!"); } }
-
-        function switchView(v) {
-            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-            document.getElementById('view-' + v).classList.remove('hidden');
-            if(v === 'admin') renderAdmin();
-            if(v === 'orders') renderKitchen();
-        }
+        function secureView(v) { if(prompt("Heslo:") === ADMIN_PASS) switchView(v); else alert("Chyba!"); }
+        function switchView(v) { document.querySelectorAll('section').forEach(s => s.classList.add('hidden')); document.getElementById('view-' + v).classList.remove('hidden'); if(v === 'admin') renderAdmin(); if(v === 'orders') renderKitchen(); }
 
         async function userLogin() {
-            const sel = document.getElementById('user-select'); const pinIn = document.getElementById('user-pin-input').value; const opt = sel.options[sel.selectedIndex];
-            if(!opt.value || !pinIn) return alert("Vyber jméno a PIN!");
+            const sel = document.getElementById('user-select'), pinIn = document.getElementById('user-pin-input').value, opt = sel.options[sel.selectedIndex];
             if(pinIn === opt.dataset.pin) {
                 currentUser = { name: opt.value, firm: opt.dataset.firm, pb: Number(opt.dataset.pb), ps: Number(opt.dataset.ps) };
                 document.getElementById('active-user-display').innerText = currentUser.name;
-                const td = new Date(); document.getElementById('week-num-curr').innerText = "#" + getWeekNumber(td);
-                const nx = new Date(); nx.setDate(td.getDate() + 7); document.getElementById('week-num-next').innerText = "#" + getWeekNumber(nx);
-                document.getElementById('user-login').classList.add('hidden');
-                document.getElementById('user-order-zone').classList.remove('hidden');
+                document.getElementById('user-login').classList.add('hidden'); document.getElementById('user-order-zone').classList.remove('hidden');
                 await loadOrderHistory(); renderUserMenu();
             } else alert("Špatný PIN!");
         }
 
-        async function loadOrderHistory() {
-            const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1);
-            selectedItems = {}; if(data?.[0]?.items) { data[0].items.split(", ").forEach(it => { if(it) selectedItems[it] = { name: it, price: it.includes('Polévka') ? currentUser.ps : currentUser.pb }; }); }
-            updateTotal();
+        async function saveMeal() {
+            const id = document.getElementById('m-id').value, n = document.getElementById('m-name').value, d = document.getElementById('m-day').value, c = document.getElementById('m-cat').value, w = document.getElementById('m-week').value, ds = document.getElementById('m-desc').value;
+            if(!n) return alert("Zadej název!");
+            const obj = { name: n, day: d, category: c, week: w, description: ds };
+            if(id) await _supabase.from('meals').update(obj).eq('id', id);
+            else await _supabase.from('meals').insert([obj]);
+            cancelEdit(); renderAdmin();
         }
 
-        async function submitOrder() {
-            const final = Object.keys(selectedItems).join(", ");
-            const btn = document.getElementById('save-btn'); btn.innerText = "...";
-            const { data: exist } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1);
-            if (exist?.length > 0) await _supabase.from('orders').update({ items: final, created_at: new Date().toISOString() }).eq('id', exist[0].id);
-            else await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: final }]);
-            btn.innerText = "ULOŽENO ✓"; setTimeout(() => btn.innerText = "Uložit", 2000);
+        function editMeal(id, n, d, c, w, ds) {
+            document.getElementById('m-id').value = id; document.getElementById('m-name').value = n; document.getElementById('m-day').value = d; document.getElementById('m-cat').value = c; document.getElementById('m-week').value = w; document.getElementById('m-desc').value = ds;
+            document.getElementById('meal-form-title').innerText = "Upravit jídlo"; document.getElementById('m-btn').innerText = "Uložit změny"; document.getElementById('m-cancel').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function toggleSelect(id, name, price) {
-            if(selectedItems[name]) delete selectedItems[name]; else selectedItems[name] = { name, price };
-            updateTotal(); renderUserMenu();
+        function cancelEdit() {
+            document.getElementById('m-id').value = ""; document.getElementById('m-name').value = ""; document.getElementById('m-desc').value = "";
+            document.getElementById('meal-form-title').innerText = "Nové jídlo"; document.getElementById('m-btn').innerText = "+ Přidat do menu"; document.getElementById('m-cancel').classList.add('hidden');
         }
 
-        function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
+        async function renderMeals() {
+            const { data } = await _supabase.from('meals').select('*').order('day');
+            document.getElementById('admin-meals-list').innerHTML = data?.map(m => `
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border">
+                    <div><p class="font-black text-[11px] uppercase text-slate-400 leading-none">${m.day} / ${m.week}</p><p class="font-bold text-xs">${m.name}</p></div>
+                    <div class="flex gap-4">
+                        <button onclick="editMeal('${m.id}', '${m.name}', '${m.day}', '${m.category}', '${m.week}', '${m.description||""}')" class="text-blue-500 font-bold">✏️</button>
+                        <button onclick="delM('${m.id}')" class="text-red-400 font-bold">✕</button>
+                    </div>
+                </div>`).join("");
+        }
+
+        async function delM(id) { if(confirm("Smazat?")) { await _supabase.from('meals').delete().eq('id', id); renderAdmin(); } }
 
         async function renderUserMenu() {
             const { data: meals } = await _supabase.from('meals').select('*');
-            renderCol(meals, 'current', 'list-current'); renderCol(meals, 'next', 'list-next');
+            const renderC = (w, id) => {
+                const cont = document.getElementById(id); cont.innerHTML = "";
+                DNY.forEach(den => {
+                    const dm = meals?.filter(m => m.day === den && m.week === w);
+                    if(dm?.length) {
+                        let h = `<div class="bg-white p-5 rounded-3xl border shadow-sm"><h3 class="font-black text-[10px] text-slate-400 mb-2 uppercase">${den}</h3><div class="space-y-2">`;
+                        dm.forEach(m => {
+                            const u = `${m.name} (${den})`; const isS = selectedItems[u]; const p = m.category === 'Polévka' ? currentUser.ps : currentUser.pb;
+                            h += `<div onclick="toggleSelect('${m.id}', '${u}', ${p})" class="p-4 rounded-2xl border-2 transition-all cursor-pointer ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
+                                    <div class="flex justify-between items-start"><p class="font-black text-xs">${m.name}</p><p class="font-black text-xs text-orange-500 ml-2">${p} Kč</p></div>
+                                    <p class="text-[10px] text-slate-500 leading-tight mt-1">${m.description || ''}</p>
+                                  </div>`;
+                        });
+                        cont.innerHTML += h + `</div></div>`;
+                    }
+                });
+            };
+            renderC('current', 'list-current'); renderC('next', 'list-next');
         }
 
-        function renderCol(meals, week, contId) {
-            const c = document.getElementById(contId); c.innerHTML = "";
-            DNY.forEach(den => {
-                const dm = meals?.filter(m => m.day === den && m.week === week);
-                if(dm?.length) {
-                    let h = `<div class="bg-white p-5 rounded-3xl border shadow-sm"><h3 class="font-black uppercase text-[10px] text-slate-400 mb-2 italic">${den}</h3><div class="space-y-2">`;
-                    dm.forEach(m => {
-                        const unique = `${m.name} (${den})`; const isS = selectedItems[unique];
-                        const pr = m.category === 'Polévka' ? currentUser.ps : currentUser.pb;
-                        h += `<div onclick="toggleSelect('${m.id}', '${unique}', ${pr})" class="p-4 rounded-2xl border-2 transition-all cursor-pointer ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between items-start mb-1"><p class="font-black text-xs leading-tight">${m.name}</p><p class="font-black text-xs text-orange-500 shrink-0 ml-2">${pr} Kč</p></div>
-                                ${m.description ? `<p class="text-[10px] text-slate-500 font-medium leading-tight">${m.description}</p>` : ''}
-                              </div>`;
-                    });
-                    c.innerHTML += h + `</div></div>`;
-                }
-            });
-        }
-
-        // KUCHYŇ PRO OBA TÝDNY
-        async function renderKitchen() {
-            const { data: orders } = await _supabase.from('orders').select('*');
-            renderKitchenWeek(orders, 'current', 'kitchen-current');
-            renderKitchenWeek(orders, 'next', 'kitchen-next');
-        }
-
-        function renderKitchenWeek(orders, weekType, contId) {
-            const cont = document.getElementById(contId); cont.innerHTML = "";
-            let dataFound = false;
-            DNY.forEach(den => {
-                let dt = {}, df = {}, hasDen = false;
-                orders?.forEach(o => { if(o.items) { o.items.split(", ").forEach(it => { 
-                    // Tady je to zjednodušené - kuchyň vidí sumu, ale nerozlišuje weekType v databázi u orders (protože orders week nemají). 
-                    // Pro profi verzi by bylo potřeba filtrovat podle ID jídel. Pro teď sečteme vše, co odpovídá jménu.
-                    if(it.includes(`(${den})`)) { hasDen = true; dataFound = true; const m = it.replace(`(${den})`,'').trim(); dt[m] = (dt[m]||0)+1; if(!df[o.user_firm]) df[o.user_firm]={}; df[o.user_firm][m] = (df[o.user_firm][m]||0)+1; } 
-                }); } });
-                if(hasDen) {
-                    let h = `<div class="bg-white p-6 rounded-[2rem] border shadow-sm"><h3 class="text-xl font-black text-slate-800 uppercase mb-4 italic">${den}</h3><div class="grid md:grid-cols-2 gap-4"><div><h4 class="text-[10px] font-black uppercase mb-2 text-slate-400">Sumář kuchař:</h4>`;
-                    for(let m in dt) h += `<div class="flex justify-between py-1 border-b text-sm font-bold"><span>${m}</span><span>${dt[m]}x</span></div>`;
-                    h += `</div><div><h4 class="text-[10px] font-black uppercase mb-2 text-slate-400">Rozvoz firmy:</h4>`;
-                    for(let f in df) { h += `<div class="mb-2 p-3 bg-slate-50 rounded-xl"><p class="font-black text-[10px] uppercase underline mb-1">${f}</p>`; for(let m in df[f]) h += `<div class="flex justify-between text-xs font-bold"><span>${m}</span><span>${df[f][m]}x</span></div>`; h += `</div>`; }
-                    cont.innerHTML += h + `</div></div></div>`;
-                }
-            });
-            if(!dataFound) cont.innerHTML = `<p class="text-slate-400 text-sm font-bold italic">Zatím žádné objednávky pro tento týden.</p>`;
-        }
-
-        async function renderAdmin() {
-            renderFirms(); renderCustomers(); renderMeals();
-            const { data: firms } = await _supabase.from('firms').select('*').order('name');
-            const sel = document.getElementById('c-firm'); sel.innerHTML = '<option value="">Vyber firmu</option>';
-            firms?.forEach(f => sel.innerHTML += `<option value="${f.name}">${f.name}</option>`);
-        }
+        function toggleSelect(id, name, price) { if(selectedItems[name]) delete selectedItems[name]; else selectedItems[name] = { name, price }; updateTotal(); renderUserMenu(); }
+        function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
+        async function loadOrderHistory() { const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); selectedItems = {}; if(data?.[0]?.items) data[0].items.split(", ").forEach(it => { if(it) selectedItems[it] = { name: it, price: it.includes('Polévka') ? currentUser.ps : currentUser.pb }; }); updateTotal(); }
+        async function submitOrder() { const f = Object.keys(selectedItems).join(", "); const btn = document.getElementById('save-btn'); const { data: ex } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); if (ex?.length > 0) await _supabase.from('orders').update({ items: f, created_at: new Date().toISOString() }).eq('id', ex[0].id); else await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: f }]); btn.innerText = "ULOŽENO!"; setTimeout(() => btn.innerText = "Uložit", 2000); }
+        async function renderKitchen() { const { data: orders } = await _supabase.from('orders').select('*'); const rKW = (w, id) => { const c = document.getElementById(id); c.innerHTML = ""; DNY.forEach(den => { let dt = {}, df = {}, has = false; orders?.forEach(o => { if(o.items) o.items.split(", ").forEach(it => { if(it.includes(`(${den})`)) { has = true; const m = it.replace(`(${den})`,'').trim(); dt[m] = (dt[m]||0)+1; if(!df[o.user_firm]) df[o.user_firm]={}; df[o.user_firm][m] = (df[o.user_firm][m]||0)+1; } }); }); if(has) { let h = `<div class="bg-white p-6 rounded-[2rem] border shadow-sm"><h3 class="text-xl font-black text-slate-800 uppercase mb-4 italic">${den}</h3><div class="grid md:grid-cols-2 gap-4"><div>`; for(let m in dt) h += `<div class="flex justify-between py-1 border-b text-sm font-bold"><span>${m}</span><span>${dt[m]}x</span></div>`; h += `</div><div>`; for(let f in df) { h += `<div class="mb-2 p-3 bg-slate-50 rounded-xl"><p class="font-black text-[10px] uppercase underline mb-1">${f}</p>`; for(let m in df[f]) h += `<div class="flex justify-between text-xs font-bold"><span>${m}</span><span>${df[f][m]}x</span></div>`; h += `</div>`; } c.innerHTML += h + `</div></div></div>`; } }); if(!c.innerHTML) c.innerHTML = "<p class='text-slate-400 font-bold'>Žádné objednávky.</p>"; }; rKW('current', 'kitchen-current'); rKW('next', 'kitchen-next'); }
+        async function renderAdmin() { renderFirms(); renderMeals(); const { data: firms } = await _supabase.from('firms').select('*').order('name'); const sel = document.getElementById('c-firm'); if(sel) { sel.innerHTML = '<option value="">Vyber firmu</option>'; firms?.forEach(f => sel.innerHTML += `<option value="${f.name}">${f.name}</option>`); } }
         async function addFirm() { const n = document.getElementById('f-name').value, pb = document.getElementById('f-bowl').value, ps = document.getElementById('f-soup').value; if(n) { await _supabase.from('firms').insert([{ name: n, custom_price_bowl: Number(pb), custom_price_soup: Number(ps) }]); renderAdmin(); } }
-        async function renderFirms() { const { data } = await _supabase.from('firms').select('*').order('name'); document.getElementById('admin-firms-list').innerHTML = data?.map(f => `<div class="flex justify-between py-1 border-b"><span>${f.name} (${f.custom_price_bowl}/${f.custom_price_soup})</span><button onclick="delF('${f.id}')" class="text-red-400">✕</button></div>`).join(""); }
+        async function renderFirms() { const { data } = await _supabase.from('firms').select('*').order('name'); document.getElementById('admin-firms-list').innerHTML = data?.map(f => `<div class="flex justify-between border-b py-1"><span>${f.name}</span><button onclick="delF('${f.id}')" class="text-red-400">✕</button></div>`).join(""); }
         async function delF(id) { await _supabase.from('firms').delete().eq('id', id); renderAdmin(); }
-        async function addCustomer() { const n = document.getElementById('c-name').value, f = document.getElementById('c-firm').value, p = document.getElementById('c-pin').value; if(n && f && p) { await _supabase.from('customers').insert([{ name: n, firm_name: f, pin: p }]); renderAdmin(); } }
-        async function renderCustomers() { const { data } = await _supabase.from('customers').select('*').order('name'); document.getElementById('admin-customers-list').innerHTML = data?.map(c => `<div class="flex justify-between py-1 border-b"><span>${c.name} (${c.pin})</span><button onclick="delC('${c.id}')" class="text-red-400">✕</button></div>`).join(""); }
-        async function delC(id) { await _supabase.from('customers').delete().eq('id', id); renderAdmin(); }
-        async function addMeal() { const n = document.getElementById('m-name').value, d = document.getElementById('m-day').value, c = document.getElementById('m-cat').value, w = document.getElementById('m-week').value, ds = document.getElementById('m-desc').value; if(n) { await _supabase.from('meals').insert([{ name: n, day: d, category: c, week: w, description: ds }]); renderAdmin(); } }
-        async function renderMeals() { const { data } = await _supabase.from('meals').select('*').order('day'); document.getElementById('admin-meals-list').innerHTML = data?.map(m => `<div class="flex justify-between py-2 border-b"><span>[${m.week}] ${m.day}: <b>${m.name}</b></span><button onclick="delM('${m.id}')" class="text-red-400">✕</button></div>`).join(""); }
-        async function delM(id) { await _supabase.from('meals').delete().eq('id', id); renderAdmin(); }
         async function rolloverWeek() { if(confirm("PŘEKLOPIT TÝDEN?")) { await _supabase.from('orders').delete().neq('user_name', ''); await _supabase.from('meals').delete().eq('week', 'current'); await _supabase.from('meals').update({ week: 'current' }).eq('week', 'next'); alert("Hotovo!"); renderAdmin(); } }
-        async function loadInitial() { const { data: c } = await _supabase.from('customers').select('*').order('name'); const { data: f } = await _supabase.from('firms').select('*'); const sel = document.getElementById('user-select'); sel.innerHTML = '<option value="">-- VYBER JMÉNO --</option>'; c?.forEach(p => { const fr = f?.find(x => x.name === p.firm_name); sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${fr?.custom_price_bowl}" data-ps="${fr?.custom_price_soup}">${p.name}</option>`; }); }
+        async function loadInitial() { const { data: c } = await _supabase.from('customers').select('*').order('name'); const { data: f } = await _supabase.from('firms').select('*'); const sel = document.getElementById('user-select'); if(sel) { sel.innerHTML = '<option value="">-- VYBER JMÉNO --</option>'; c?.forEach(p => { const fr = f?.find(x => x.name === p.firm_name); sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${fr?.custom_price_bowl}" data-ps="${fr?.custom_price_soup}">${p.name}</option>`; }); } }
         loadInitial();
     </script>
 </body>
