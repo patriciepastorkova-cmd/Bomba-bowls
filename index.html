@@ -27,7 +27,7 @@
         <h1 class="text-xl font-black text-orange-500 italic uppercase cursor-pointer" onclick="window.location.reload()">Bomba Bowls 🥗</h1>
         <div class="flex gap-2">
             <button onclick="secureView('admin')" class="px-3 py-2 bg-black text-white rounded-xl text-[10px] font-black uppercase italic text-orange-400">Admin 🔒</button>
-            <button onclick="switchView('orders')" class="px-3 py-2 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase italic">Kuchyň 👨‍🍳</button>
+            <button onclick="secureView('orders')" class="px-3 py-2 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase italic">Kuchyň 👨‍🍳</button>
         </div>
     </nav>
 
@@ -321,21 +321,78 @@
 
 
         // --- KUCHYŇ ---
+                // --- KUCHYŇ ---
         async function renderKitchen() {
             const { data: orders } = await _supabase.from('orders').select('*');
-            const cont = document.getElementById('view-orders'); cont.innerHTML = '<h2 class="text-3xl font-black uppercase italic text-center mb-8 pt-4">Kuchyň 👨‍🍳</h2>';
+            const cont = document.getElementById('view-orders'); 
+            cont.innerHTML = '<h2 class="text-3xl font-black uppercase italic text-center mb-8 pt-4">Kuchyň 👨‍🍳</h2>';
+            
+            if (!orders || orders.length === 0) {
+                cont.innerHTML += '<p class="text-center text-slate-400 font-bold uppercase">Zatím žádné objednávky</p>';
+                return;
+            }
+
             DNY.forEach(den => {
-                let counts = {}, firms = {}, has = false;
-                orders?.forEach(o => { if(o.items) o.items.split(", ").forEach(it => { if(it.includes(`(${den})`)) { has = true; const m = it.replace(`(${den})`,'').trim(); counts[m] = (counts[m]||0)+1; if(!firms[o.user_firm]) firms[o.user_firm]={}; firms[o.user_firm][m] = (firms[o.user_firm][m]||0)+1; } }); });
+                let counts = {}; // Celkový počet porcí daného jídla
+                let firms = {};  // Rozdělení jídel podle firem
+                let has = false;
+
+                orders.forEach(o => { 
+                    if(o.items) {
+                        o.items.split(", ").forEach(it => { 
+                            if(it.includes(`(${den})`)) { 
+                                has = true; 
+                                // Očistíme název jídla od dne v závorce
+                                const mealName = it.replace(`(${den})`,'').trim(); 
+                                
+                                // Počítáme celkově
+                                counts[mealName] = (counts[mealName] || 0) + 1; 
+                                
+                                // Počítáme pro konkrétní firmu
+                                if(!firms[o.user_firm]) firms[o.user_firm] = {}; 
+                                firms[o.user_firm][mealName] = (firms[o.user_firm][mealName] || 0) + 1; 
+                            } 
+                        }); 
+                    }
+                });
+
                 if(has) {
-                    let h = `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-l-8 border-green-500 mb-6 mx-auto max-w-4xl">
-                        <h3 class="text-xl font-black uppercase mb-4 italic text-green-600">${den}</h3>
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div><p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">Sumář:</p>`;
-                    for(let m in counts) h += `<div class="flex justify-between py-1 border-b font-bold text-sm"><span>${m}</span><span class="text-orange-600">${counts[m]}x</span></div>`;
-                    h += `</div><div><p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">Rozvoz:</p>`;
-                    for(let f in firms) { h += `<div class="mb-2 p-3 bg-slate-50 rounded-xl"><p class="font-black text-[10px] uppercase underline mb-1 text-blue-600">${f}</p>`; for(let m in firms[f]) h += `<div class="flex justify-between text-xs font-bold"><span>${m}</span><span>${firms[f][m]}x</span></div>`; h += `</div>`; }
-                    cont.innerHTML += h + `</div></div></div>`;
+                    let h = `
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-l-8 border-green-500 mb-8 mx-auto max-w-4xl">
+                        <h3 class="text-2xl font-black uppercase mb-6 italic text-green-600 border-b pb-2">${den}</h3>
+                        <div class="grid md:grid-cols-2 gap-10">
+                            <div>
+                                <p class="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Celkem uvařit:</p>
+                                <div class="space-y-2">`;
+                                    for(let m in counts) {
+                                        h += `<div class="flex justify-between py-2 border-b border-slate-100 font-bold text-sm">
+                                                <span class="text-slate-700">${m}</span>
+                                                <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full">${counts[m]}x</span>
+                                              </div>`;
+                                    }
+                    h += `      </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Rozdělení do firem:</p>
+                                <div class="space-y-4">`;
+                                    for(let f in firms) { 
+                                        h += `<div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                                                <p class="font-black text-xs uppercase mb-2 text-blue-600 flex justify-between">
+                                                    <span>🏢 ${f}</span>
+                                                </p>`; 
+                                        for(let m in firms[f]) {
+                                            h += `<div class="flex justify-between text-xs font-bold py-1">
+                                                    <span class="text-slate-600">${m}</span>
+                                                    <span class="text-slate-900">${firms[f][m]}x</span>
+                                                  </div>`;
+                                        }
+                                        h += `</div>`; 
+                                    }
+                    h += `      </div>
+                            </div>
+                        </div>
+                    </div>`;
+                    cont.innerHTML += h;
                 }
             });
         }
