@@ -341,5 +341,24 @@
         }
         initLogin();
     </script>
+        <script>
+        // Tato funkce propojí zákazníky s jejich cenami podle firmy
+        async function initLogin() {
+            const { data: c } = await _supabase.from('customers').select('*').order('name');
+            const { data: f } = await _supabase.from('firms').select('*');
+            const sel = document.getElementById('user-select');
+            if(sel) {
+                sel.innerHTML = '<option value="">-- JMÉNO --</option>';
+                c?.forEach(p => {
+                    const fr = f?.find(x => (x.name || "").trim().toLowerCase() === (p.firm_name || "").trim().toLowerCase());
+                    const cB = fr ? fr.custom_price_bowl : 169;
+                    const cS = fr ? fr.custom_price_soup : 49;
+                    sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${cB}" data-ps="${cS}">${p.name}</option>`;
+                });
+            }
+        }
+        // Spuštění načítání dat při otevření stránky
+        initLogin();
+    </script>
 </body>
 </html>
