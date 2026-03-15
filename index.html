@@ -226,185 +226,108 @@
         function prepMealEdit(id) { const m = globalMeals.find(x => x.id === id); document.getElementById('edit-meal-id').value=m.id; document.getElementById('m-name').value=m.name; document.getElementById('m-desc').value=m.description; document.getElementById('m-cat').value=m.category; }
         async function delLib(id) { if(confirm("Smazat?")) { await _supabase.from('meals').delete().eq('id', id); renderAdmin(); } }
 
-        // --- ZÁKAZNÍK ---
+               // --- ZÁKAZNÍK ---
+        let allCustomers = []; 
+
+        async function initLogin() {
+            console.log("Načítám data pro přihlášení...");
+            const { data: c } = await _supabase.from('customers').select('*').order('name');
+            const { data: f } = await _supabase.from('firms').select('*');
+            
+            if (!c) { console.error("Chyba načítání zákazníků"); return; }
+
+            // Propojíme uživatele s cenami firem do jedné proměnné
+            allCustomers = c.map(p => {
+                const fr = f?.find(x => x.name.trim() === p.firm_name.trim());
+                return {
+                    ...p,
+                    pb: fr ? fr.custom_price_bowl : 169,
+                    ps: fr ? fr.custom_price_soup : 49
+                };
+            });
+            console.log("Zákazníci připraveni:", allCustomers.length);
+        }
+
+        function searchUser(input) {
+            const q = input.value.toLowerCase().trim();
+            const res = document.getElementById('user-search-results');
+            if (q.length < 1) { res.classList.add('hidden'); return; }
+
+            const filtered = allCustomers.filter(u => u.name.toLowerCase().includes(q));
+            
+            if (filtered.length > 0) {
+                res.classList.remove('hidden');
+                res.innerHTML = filtered.map(u => `
+                    <div onclick="selectUserForLogin('${u.name}', '${u.pin}', '${u.firm_name}', ${u.pb}, ${u.ps})" 
+                         class="p-4 hover:bg-orange-50 border-b cursor-pointer font-bold text-sm flex justify-between bg-white">
+                        <span>${u.name}</span>
+                        <span class="text-[10px] text-slate-400 uppercase">${u.firm_name}</span>
+                    </div>
+                `).join('');
+            } else {
+                res.innerHTML = '<div class="p-4 text-slate-400 text-xs bg-white">Nenalezeno...</div>';
+                res.classList.remove('hidden');
+            }
+        }
+
+        function selectUserForLogin(name, pin, firm, pb, ps) {
+            document.getElementById('user-search-input').value = name;
+            const hiddenInput = document.getElementById('selected-user-data');
+            hiddenInput.dataset.name = name;
+            hiddenInput.dataset.pin = pin;
+            hiddenInput.dataset.firm = firm;
+            hiddenInput.dataset.pb = pb;
+            hiddenInput.dataset.ps = ps;
+            document.getElementById('user-search-results').classList.add('hidden');
+        }
+
         async function userLogin() {
-    const sel = document.getElementById('user-select');
-    const pin = document.getElementById('user-pin-input').value;
-    const opt = sel.options[sel.selectedIndex];
-    
-    if (opt && pin === opt.dataset.pin) {
-        currentUser = { 
-            name: opt.value, 
-            firm: opt.dataset.firm, 
-            pb: parseInt(opt.dataset.pb) || 169, 
-            ps: parseInt(opt.dataset.ps) || 49 
-        };
-        
-        console.log("Ceny načteny:", currentUser.pb, currentUser.ps); // Tohle uvidíš v konzoli
+            const hidden = document.getElementById('selected-user-data');
+            const pinInput = document.getElementById('user-pin-input').value;
+            
+            if (hidden.dataset.name && pinInput === hidden.dataset.pin) {
+                currentUser = { 
+                    name: hidden.dataset.name, 
+                    firm: hidden.dataset.firm, 
+                    pb: Number(hidden.dataset.pb), 
+                    ps: Number(hidden.dataset.ps) 
+                };
 
-        document.getElementById('user-login').classList.add('hidden'); 
-        document.getElementById('user-order-zone').classList.remove('hidden');
-        document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name} (${currentUser.firm})`;
-        
-        selectedItems = {}; 
-        await loadOrderHistory(); 
-        renderUserMenu();
-    } else {
-        alert("Chybný PIN!");
-    }
-}
-        let allCustomers = []; // Pomocná proměnná pro vyhledávání
-
-// Upravený initLogin, který si uloží seznam uživatelů
-async function initLogin() {
-    const { data: c } = await _supabase.from('customers').select('*').order('name');
-    const { data: f } = await _supabase.from('firms').select('*');
-    
-    // Propojíme uživatele s cenami jejich firem a uložíme do paměti
-    allCustomers = c?.map(p => {
-        const fr = f?.find(x => x.name.trim() === p.firm_name.trim());
-        return {
-            ...p,
-            pb: fr ? fr.custom_price_bowl : 169,
-            ps: fr ? fr.custom_price_soup : 49
-        };
-    }) || [];
-}
-
-function searchUser(input) {
-    const q = input.value.toLowerCase();
-    const res = document.getElementById('user-search-results');
-    if (q.length < 1) { res.classList.add('hidden'); return; }
-
-    const filtered = allCustomers.filter(u => u.name.toLowerCase().includes(q));
-    
-    if (filtered.length > 0) {
-        res.classList.remove('hidden');
-        res.innerHTML = filtered.map(u => `
-            <div onclick="selectUserForLogin('${u.name}', '${u.pin}', '${u.firm_name}', ${u.pb}, ${u.ps})" 
-                 class="p-4 hover:bg-orange-50 border-b cursor-pointer font-bold text-sm flex justify-between">
-                <span>${u.name}</span>
-                <span class="text-[10px] text-slate-400 uppercase">${u.firm_name}</span>
-            </div>
-        `).join('');
-    } else {
-        res.innerHTML = '<div class="p-4 text-slate-400 text-xs">Uživatel nenalezen</div>';
-        res.classList.remove('hidden');
-    }
-}
-
-function selectUserForLogin(name, pin, firm, pb, ps) {
-    // Zapíšeme vybraná data do "neviditelných" míst a do inputu
-    document.getElementById('user-search-input').value = name;
-    const hiddenInput = document.getElementById('selected-user-data');
-    hiddenInput.dataset.name = name;
-    hiddenInput.dataset.pin = pin;
-    hiddenInput.dataset.firm = firm;
-    hiddenInput.dataset.pb = pb;
-    hiddenInput.dataset.ps = ps;
-    
-    document.getElementById('user-search-results').classList.add('hidden');
-}
-
-// UPRAVENÝ userLogin pro nové hledání
-async function userLogin() {
-    const hidden = document.getElementById('selected-user-data');
-    const pinInput = document.getElementById('user-pin-input').value;
-    
-    if (hidden.dataset.name && pinInput === hidden.dataset.pin) {
-        currentUser = { 
-            name: hidden.dataset.name, 
-            firm: hidden.dataset.firm, 
-            pb: Number(hidden.dataset.pb), 
-            ps: Number(hidden.dataset.ps) 
-        };
-
-        document.getElementById('user-login').classList.add('hidden'); 
-        document.getElementById('user-order-zone').classList.remove('hidden');
-        document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name} (${currentUser.firm})`;
-        
-        selectedItems = {}; 
-        await loadOrderHistory(); 
-        renderUserMenu();
-    } else {
-        alert("Chybné jméno nebo PIN!");
-    }
-}
-
-
-        async function renderUserMenu() {
-    const isPub = localStorage.getItem('menu_published') === 'true';
-    const { data: meals } = await _supabase.from('meal_templates').select('*');
-    
-    if(!isPub) { 
-        document.getElementById('published-status-msg').classList.remove('hidden'); 
-        document.getElementById('user-menu-grid').classList.add('hidden');
-        return; 
-    }
-    
-    document.getElementById('published-status-msg').classList.add('hidden');
-    document.getElementById('user-menu-grid').classList.remove('hidden');
-    
-    const draw = (w, id) => {
-        const c = document.getElementById(id);
-        c.innerHTML = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-xs mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
-        
-        DNY.forEach(den => {
-            const dm = meals?.filter(m => m.day === den && m.week === w);
-            if(dm?.length) {
-                let h = `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><h3 class="font-black uppercase text-[10px] text-slate-400 mb-2">${den}</h3>`;
-                dm.forEach(m => {
-                    const u = `${m.name} (${den})`; 
-                    const isS = selectedItems[u]; 
-                    
-                    // --- LOGIKA CENY ---
-                    // Převedeme kategorii na malá písmena pro bezpečné porovnání
-                    const kat = (m.category || "").toLowerCase();
-                    // Pokud kategorie obsahuje "polévka", použijeme cenu ps (soup), jinak pb (bowl)
-                    const cenaJidla = kat.includes("polévka") ? currentUser.ps : currentUser.pb;
-                    
-                    h += `<div onclick="toggleSelect('${u}', ${cenaJidla})" class="p-3 rounded-2xl border-2 mb-2 transition-all cursor-pointer ${isS ? 'border-green-500 bg-green-50 shadow-inner' : 'bg-slate-50 border-transparent'}">
-                        <div class="flex justify-between font-bold text-xs">
-                            <span>${m.name}</span>
-                            <span class="${isS ? 'text-green-600' : 'text-orange-600'} font-black">${cenaJidla} Kč</span>
+                // Schovat login, vytvořit zónu pro objednávku, pokud neexistuje
+                document.getElementById('user-login').classList.add('hidden'); 
+                
+                // Přidáme zobrazení jména a košíku, pokud chybí v HTML
+                let zone = document.getElementById('user-order-zone');
+                if(!zone) {
+                    zone = document.createElement('div');
+                    zone.id = 'user-order-zone';
+                    zone.innerHTML = `
+                        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl mb-6 text-center">
+                            <h2 id="active-user-display" class="font-black text-xl italic uppercase text-slate-800"></h2>
+                            <div id="published-status-msg" class="hidden text-red-500 font-bold mt-2">MENU JEŠTĚ NEBYLO ZVEŘEJNĚNO</div>
+                            <div class="flex justify-between items-center mt-4 bg-slate-100 p-4 rounded-2xl">
+                                <span class="font-black uppercase text-xs">Celkem k úhradě:</span>
+                                <span id="total-price" class="font-black text-xl text-orange-600">0 Kč</span>
+                            </div>
+                            <button onclick="submitOrder()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg mt-4">Potvrdit objednávku ✅</button>
                         </div>
-                        <div class="text-[9px] text-slate-400 italic mt-1">${m.description || ''}</div>
-                    </div>`;
-                });
-                c.innerHTML += h + `</div>`;
+                        <div id="user-menu-grid" class="grid md:grid-cols-2 gap-4">
+                            <div id="list-current"></div>
+                            <div id="list-next"></div>
+                        </div>
+                    `;
+                    document.getElementById('view-user').appendChild(zone);
+                }
+                
+                document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name} (${currentUser.firm})`;
+                selectedItems = {}; 
+                await loadOrderHistory(); 
+                renderUserMenu();
+            } else {
+                alert("Chybné jméno nebo PIN!");
             }
-        });
-    };
-    draw('current', 'list-current'); 
-    draw('next', 'list-next');
-}
-
-        function toggleSelect(n, p) { if(selectedItems[n]) delete selectedItems[n]; else selectedItems[n] = { name: n, price: p }; updateTotal(); renderUserMenu(); }
-        function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
-        async function submitOrder() { const items = Object.keys(selectedItems).join(", "); await _supabase.from('orders').delete().eq('user_name', currentUser.name); await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: items }]); alert("Uloženo!"); }
-        async function loadOrderHistory() { 
-    const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); 
-    selectedItems = {}; // Resetovat košík
-    
-    if(data?.[0]?.items) {
-        const itemsArray = data[0].items.split(", ");
-        itemsArray.forEach(itemName => { 
-            if(itemName) {
-                // Pokud název obsahuje "Polévka" (což u polévek v menu máš), použije cenu soup
-                // Jinak použije cenu bowl
-                const isSoup = itemName.toLowerCase().includes('polévka');
-                selectedItems[itemName] = { 
-                    name: itemName, 
-                    price: isSoup ? currentUser.ps : currentUser.pb 
-                }; 
-            }
-        }); 
-    }
-    updateTotal(); 
-}
-
-
-        // --- KUCHYŇ ---
+        }
+        
                 // --- KUCHYŇ ---
         async function renderKitchen() {
             const { data: orders } = await _supabase.from('orders').select('*');
@@ -508,6 +431,7 @@ async function userLogin() {
 }
 
         initLogin();
+        window.onload = () => { initLogin(); };
     </script>
 </body>
 </html>
