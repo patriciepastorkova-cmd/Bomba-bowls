@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOMBA BOWLS - Divadelní klub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --bomba-orange: #FF9800; --bomba-green: #4CAF50; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .meal-card.selected { border: 3px solid var(--bomba-green); background-color: #f0fdf4; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <nav class="bg-white shadow-sm p-4 sticky top-0 z-50 flex justify-between items-center border-b">
+        <h1 class="text-xl font-black text-orange-500 italic uppercase">Bomba Bowls 🥗</h1>
+        <div class="flex gap-1 text-[10px] font-bold">
+            <button onclick="location.reload()" class="px-3 py-2 bg-gray-100 rounded-lg uppercase">Odhlásit</button>
+            <button onclick="secureView('admin')" class="px-3 py-2 bg-black text-white rounded-lg uppercase italic">Admin 🔒</button>
+            <button onclick="secureView('orders')" class="px-3 py-2 bg-green-600 text-white rounded-lg uppercase italic">Kuchyň 🔒</button>
+        </div>
+    </nav>
+
+    <section id="view-admin" class="hidden max-w-7xl mx-auto p-4">
+        <div class="bg-white p-5 rounded-2xl shadow border mb-6">
+            <h3 class="font-black text-xs uppercase text-green-600 mb-2 italic">Plánování & Překlopení</h3>
+            <button onclick="rolloverWeek()" class="w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase text-sm shadow-lg">➔ PŘEKLOPIT TÝDEN (Smazat staré objednávky)</button>
+        </div>
+        </section>
+
+    <section id="view-user" class="max-w-4xl mx-auto p-4">
+        <div id="user-login" class="max-w-md mx-auto bg-white p-10 rounded-[2.5rem] shadow-2xl text-center mt-10 border-b-8 border-orange-500">
+            <h2 class="text-2xl font-black mb-6 text-orange-500 uppercase italic">Přihlášení</h2>
+            <select id="user-select" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-4 text-center appearance-none"></select>
+            <input id="user-pin-input" type="password" inputmode="numeric" placeholder="Tvůj PIN" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-6 text-center outline-none">
+            <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-2xl font-black text-xl shadow-lg uppercase">Vstoupit</button>
+        </div>
+
+        <div id="user-order-zone" class="hidden space-y-6 pt-4">
+            <div class="bg-blue-50 border-2 border-blue-100 p-5 rounded-3xl flex items-center justify-between">
+                <div class="flex items-center gap-4 text-[12px]">
+                    <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold">📞</div>
+                    <div><p class="font-black text-blue-900 uppercase leading-none mb-1 text-[10px]">Potřebuješ pomoc?</p><a href="tel:+420605285174" class="text-blue-700 font-black text-lg italic">605 285 174</a></div>
+                </div>
+                <div class="text-right"><p class="text-[10px] font-bold text-slate-400 uppercase italic">Přihlášen:</p><p id="active-user-display" class="font-black text-slate-900"></p></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 items-start">
+                <div id="col-current" class="space-y-4">
+                    <h2 class="bg-slate-200 text-slate-700 p-3 rounded-2xl text-center font-black uppercase italic text-sm tracking-widest shadow-sm">Aktuální týden <span id="week-num-curr"></span></h2>
+                    <div id="list-current" class="space-y-6"></div>
+                </div>
+
+                <div id="col-next" class="space-y-4">
+                    <h2 class="bg-orange-500 text-white p-3 rounded-2xl text-center font-black uppercase italic text-sm tracking-widest shadow-md">Příští týden <span id="week-num-next"></span></h2>
+                    <div id="list-next" class="space-y-6"></div>
+                </div>
+            </div>
+            
+            <div id="order-footer" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50 bg-white/95 backdrop-blur-md p-6 rounded-[2.5rem] shadow-2xl border flex justify-between items-center">
+                <div><p class="text-[10px] font-black text-slate-400 uppercase italic">K úhradě</p><span id="total-price" class="text-3xl font-black text-green-600">0 Kč</span></div>
+                <button id="save-btn" onclick="submitOrder()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-lg active:scale-95 transition-transform">Uložit objednávku</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-orders" class="hidden max-w-5xl mx-auto p-4">
+        <div id="kitchen-container" class="space-y-8"></div>
+    </section>
+
+    <script>
+        const SUPABASE_URL = 'https://bepuispbvxkmidkztupi.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_T9PUk3RfftHoXwm2jz9ugg_l3GbE_Wy';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const DNY = ["Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek"];
+        const ADMIN_PASS = "bomba2026";
+        let currentUser = null, selectedItems = {};
+
+        // Funkce pro výpočet čísla týdne
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        }
+
+        function secureView(v) { if(prompt("Heslo:") === ADMIN_PASS) switchView(v); else alert("Chyba!"); }
+
+        function switchView(v) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('view-' + v).classList.remove('hidden');
+            if(v === 'orders') renderKitchen();
+        }
+
+        async function userLogin() {
+            const sel = document.getElementById('user-select'); const pinIn = document.getElementById('user-pin-input').value; const opt = sel.options[sel.selectedIndex];
+            if(!opt.value || !pinIn) return alert("Vyber jméno a zadej PIN!");
+            if(pinIn === opt.dataset.pin) {
+                currentUser = { name: opt.value, firm: opt.dataset.firm, pb: Number(opt.dataset.pb), ps: Number(opt.dataset.ps) };
+                document.getElementById('active-user-display').innerText = currentUser.name;
+                
+                const today = new Date();
+                document.getElementById('week-num-curr').innerText = "#" + getWeekNumber(today);
+                const nextWeek = new Date(); nextWeek.setDate(today.getDate() + 7);
+                document.getElementById('week-num-next').innerText = "#" + getWeekNumber(nextWeek);
+
+                document.getElementById('user-login').classList.add('hidden');
+                document.getElementById('user-order-zone').classList.remove('hidden');
+                await loadOrderHistory(); renderUserMenu();
+            } else alert("Špatný PIN!");
+        }
+
+        async function submitOrder() {
+            const final = Object.keys(selectedItems).join(", ");
+            const btn = document.getElementById('save-btn'); btn.innerText = "Ukládám...";
+            const { data: exist } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1);
+            if (exist?.length > 0) await _supabase.from('orders').update({ items: final, created_at: new Date().toISOString() }).eq('id', exist[0].id);
+            else await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: final }]);
+            await loadOrderHistory();
+            btn.innerText="ULOŽENO! ✓"; setTimeout(() => btn.innerText="Uložit objednávku", 2000);
+        }
+
+        async function loadOrderHistory() {
+            const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1);
+            selectedItems = {};
+            if(data?.[0]?.items) {
+                data[0].items.split(", ").forEach(it => { if(it) selectedItems[it] = { name: it, price: it.includes('Polévka') ? currentUser.ps : currentUser.pb }; });
+            }
+            updateTotal();
+        }
+
+        function toggleSelect(id, name, price, btn) {
+            const card = document.getElementById('card-'+id);
+            if(selectedItems[name]) { delete selectedItems[name]; card.classList.remove('selected'); card.classList.add('bg-slate-50'); }
+            else { selectedItems[name] = { name, price }; card.classList.add('selected'); card.classList.remove('bg-slate-50'); }
+            updateTotal(); renderUserMenu(); // Refresh pro zobrazení tlačítek
+        }
+
+        function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
+
+        async function renderUserMenu() {
+            const { data: meals } = await _supabase.from('meals').select('*');
+            renderWeekCol(meals, 'current', 'list-current');
+            renderWeekCol(meals, 'next', 'list-next');
+        }
+
+        function renderWeekCol(meals, weekType, containerId) {
+            const cont = document.getElementById(containerId); cont.innerHTML = "";
+            DNY.forEach(den => {
+                const dm = meals?.filter(m => m.day === den && m.week === weekType);
+                if(dm?.length) {
+                    let h = `<div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 class="font-black uppercase text-xs text-slate-400 mb-3 italic">${den}</h3>
+                                <div class="space-y-3">`;
+                    dm.forEach(m => {
+                        const uniqueName = `${m.name} (${den})`;
+                        const isSel = selectedItems[uniqueName];
+                        h += `<div id="card-${m.id}" onclick="toggleSelect('${m.id}', '${uniqueName}', ${m.category === 'Polévka' ? currentUser.ps : currentUser.pb}, this)" 
+                                   class="meal-card p-4 rounded-2xl border cursor-pointer transition-all ${isSel ? 'selected' : 'bg-slate-50'}">
+                                <div class="flex justify-between items-center">
+                                    <div class="pr-2"><p class="font-black text-[13px] leading-tight">${m.name}</p></div>
+                                    <div class="text-right shrink-0"><p class="font-black text-xs text-orange-500">${m.category === 'Polévka' ? currentUser.ps : currentUser.pb} Kč</p></div>
+                                </div>
+                              </div>`;
+                    });
+                    cont.innerHTML += h + `</div></div>`;
+                }
+            });
+        }
+
+        async function rolloverWeek() { 
+            if(confirm("OPRAVDU PŘEKLOPIT?\nSmažou se staré objednávky a Příští týden se stane Aktuálním.")) { 
+                await _supabase.from('orders').delete().neq('user_name', ''); 
+                await _supabase.from('meals').delete().eq('week', 'current'); 
+                await _supabase.from('meals').update({ week: 'current' }).eq('week', 'next'); 
+                alert("Hotovo!"); location.reload();
+            } 
+        }
+
+        async function loadLoginData() {
+            const { data: c } = await _supabase.from('customers').select('*').order('name');
+            const { data: f } = await _supabase.from('firms').select('*');
+            const sel = document.getElementById('user-select'); sel.innerHTML = '<option value="">-- VYBER JMÉNO --</option>';
+            c?.forEach(p => { 
+                const fr = f?.find(x => x.name === p.firm_name); 
+                sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${fr?.custom_price_bowl}" data-ps="${fr?.custom_price_soup}">${p.name}</option>`; 
+            });
+        }
+
+        loadLoginData();
+    </script>
+</body>
+</html>
