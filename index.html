@@ -226,27 +226,22 @@
     const pin = document.getElementById('user-pin-input').value;
     const opt = sel.options[sel.selectedIndex];
     
-    if(opt && pin === opt.dataset.pin) {
-        // 1. Načtení dat o uživateli a JEHO cenách z datasetu
+    if (opt && pin === opt.dataset.pin) {
         currentUser = { 
             name: opt.value, 
             firm: opt.dataset.firm, 
-            pb: Number(opt.dataset.pb), // Cena za Bowl pro tuhle firmu
-            ps: Number(opt.dataset.ps)  // Cena za Polévku pro tuhle firmu
+            pb: parseInt(opt.dataset.pb) || 169, 
+            ps: parseInt(opt.dataset.ps) || 49 
         };
+        
+        console.log("Ceny načteny:", currentUser.pb, currentUser.ps); // Tohle uvidíš v konzoli
 
-        // 2. Přepnutí obrazovky (schovat login, ukázat menu)
         document.getElementById('user-login').classList.add('hidden'); 
         document.getElementById('user-order-zone').classList.remove('hidden');
-
-        // 3. Zobrazení jména přihlášeného uživatele
         document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name} (${currentUser.firm})`;
-
-        // 4. Resetování košíku a načtení historie objednávek z databáze
+        
         selectedItems = {}; 
         await loadOrderHistory(); 
-
-        // 5. Vykreslení jídelníčku s uživatelovými cenami
         renderUserMenu();
     } else {
         alert("Chybný PIN!");
@@ -254,30 +249,51 @@
 }
 
         async function renderUserMenu() {
-            const isPub = localStorage.getItem('menu_published') === 'true';
-            const { data: meals } = await _supabase.from('meal_templates').select('*');
-            if(!isPub) { document.getElementById('published-status-msg').classList.remove('hidden'); document.getElementById('user-menu-grid').classList.add('hidden'); return; }
-            document.getElementById('published-status-msg').classList.add('hidden'); document.getElementById('user-menu-grid').classList.remove('hidden');
-            
-            const draw = (w, id) => {
-                const c = document.getElementById(id); c.innerHTML = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-xs mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
-                DNY.forEach(den => {
-                    const dm = meals?.filter(m => m.day === den && m.week === w);
-                    if(dm?.length) {
-                        let h = `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><h3 class="font-black uppercase text-[10px] text-slate-400 mb-2">${den}</h3>`;
-                        dm.forEach(m => {
-                            const u = `${m.name} (${den})`; const isS = selectedItems[u]; const p = m.category === 'Polévka' ? currentUser.ps : currentUser.pb;
-                            h += `<div onclick="toggleSelect('${u}', ${p})" class="p-3 rounded-2xl border-2 mb-2 transition-all cursor-pointer ${isS ? 'border-green-500 bg-green-50 shadow-inner' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between font-bold text-xs"><span>${m.name}</span><span>${p} Kč</span></div>
-                                <div class="text-[9px] text-slate-400 italic">${m.description || ''}</div>
-                            </div>`;
-                        });
-                        c.innerHTML += h + `</div>`;
-                    }
+    const isPub = localStorage.getItem('menu_published') === 'true';
+    const { data: meals } = await _supabase.from('meal_templates').select('*');
+    
+    if(!isPub) { 
+        document.getElementById('published-status-msg').classList.remove('hidden'); 
+        document.getElementById('user-menu-grid').classList.add('hidden');
+        return; 
+    }
+    
+    document.getElementById('published-status-msg').classList.add('hidden');
+    document.getElementById('user-menu-grid').classList.remove('hidden');
+    
+    const draw = (w, id) => {
+        const c = document.getElementById(id);
+        c.innerHTML = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-xs mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
+        
+        DNY.forEach(den => {
+            const dm = meals?.filter(m => m.day === den && m.week === w);
+            if(dm?.length) {
+                let h = `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><h3 class="font-black uppercase text-[10px] text-slate-400 mb-2">${den}</h3>`;
+                dm.forEach(m => {
+                    const u = `${m.name} (${den})`; 
+                    const isS = selectedItems[u]; 
+                    
+                    // --- LOGIKA CENY ---
+                    // Převedeme kategorii na malá písmena pro bezpečné porovnání
+                    const kat = (m.category || "").toLowerCase();
+                    // Pokud kategorie obsahuje "polévka", použijeme cenu ps (soup), jinak pb (bowl)
+                    const cenaJidla = kat.includes("polévka") ? currentUser.ps : currentUser.pb;
+                    
+                    h += `<div onclick="toggleSelect('${u}', ${cenaJidla})" class="p-3 rounded-2xl border-2 mb-2 transition-all cursor-pointer ${isS ? 'border-green-500 bg-green-50 shadow-inner' : 'bg-slate-50 border-transparent'}">
+                        <div class="flex justify-between font-bold text-xs">
+                            <span>${m.name}</span>
+                            <span class="${isS ? 'text-green-600' : 'text-orange-600'} font-black">${cenaJidla} Kč</span>
+                        </div>
+                        <div class="text-[9px] text-slate-400 italic mt-1">${m.description || ''}</div>
+                    </div>`;
                 });
-            };
-            draw('current', 'list-current'); draw('next', 'list-next');
-        }
+                c.innerHTML += h + `</div>`;
+            }
+        });
+    };
+    draw('current', 'list-current'); 
+    draw('next', 'list-next');
+}
 
         function toggleSelect(n, p) { if(selectedItems[n]) delete selectedItems[n]; else selectedItems[n] = { name: n, price: p }; updateTotal(); renderUserMenu(); }
         function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
@@ -331,19 +347,21 @@
     const { data: f } = await _supabase.from('firms').select('*');
     const sel = document.getElementById('user-select');
     
-    if(sel) { 
+    if (sel) { 
         sel.innerHTML = '<option value="">-- JMÉNO --</option>'; 
         c?.forEach(p => { 
-            // Najdeme firmu zákazníka, abychom získali její ceny
-            const fr = f?.find(x => x.name === p.firm_name); 
-            const bowlPrice = fr?.custom_price_bowl || 169;
-            const soupPrice = fr?.custom_price_soup || 49;
+            // Najdeme firmu - POZOR: Jména firem musí v obou tabulkách sedět na písmeno přesně!
+            const fr = f?.find(x => x.name.trim() === p.firm_name.trim()); 
+            
+            // Pokud firmu nenajde, dáme 0, abychom viděli, že je chyba v propojení
+            const bPrice = fr ? fr.custom_price_bowl : 169;
+            const sPrice = fr ? fr.custom_price_soup : 49;
             
             sel.innerHTML += `<option value="${p.name}" 
                                 data-pin="${p.pin}" 
                                 data-firm="${p.firm_name}" 
-                                data-pb="${bowlPrice}" 
-                                data-ps="${soupPrice}">${p.name}</option>`; 
+                                data-pb="${bPrice}" 
+                                data-ps="${sPrice}">${p.name} (${p.firm_name})</option>`; 
         }); 
     }
 }
