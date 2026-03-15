@@ -7,12 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Bomba%20Bowls%22,%22short_name%22:%22Bomba%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#ffffff%22,%22theme_color%22:%22#f97316%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/2917/2917633.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2917/2917633.png">
-
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         .custom-scroll::-webkit-scrollbar { width: 5px; }
@@ -32,7 +26,7 @@
 
     <section id="view-admin" class="hidden max-w-7xl mx-auto p-4 space-y-8">
         <div class="bg-white p-6 rounded-[3rem] shadow-xl border-t-8 border-orange-500 text-center">
-            <h2 class="font-black text-2xl uppercase italic text-slate-800">Plánovač (Polévka + 3 Jídla)</h2>
+            <h2 class="font-black text-2xl uppercase italic text-slate-800">Plánovač Menu</h2>
             <div class="grid lg:grid-cols-2 gap-8 mt-8">
                 <div class="bg-slate-50 p-5 rounded-[2.5rem] border-2 border-slate-100">
                     <h3 class="font-black text-orange-600 uppercase mb-4 italic text-xs">📅 Tento týden</h3>
@@ -52,29 +46,42 @@
         <div class="grid md:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border-t-8 border-blue-500 text-xs">
                 <h3 class="font-black text-blue-600 mb-4 uppercase italic">Firmy a Ceny</h3>
-                <div id="admin-firms-ui" class="space-y-2 mb-4 bg-blue-50 p-4 rounded-2xl">
-                    <input id="edit-firm-id" type="hidden"><input id="f-name" placeholder="Název firmy" class="w-full p-3 rounded-xl font-bold mb-2">
-                    <div class="grid grid-cols-2 gap-2"><input id="f-bowl" type="number" placeholder="Bowl Kč" class="p-3 rounded-xl font-bold"><input id="f-soup" type="number" placeholder="Soup Kč" class="p-3 rounded-xl font-bold"></div>
+                <div class="space-y-2 mb-4 bg-blue-50 p-4 rounded-2xl">
+                    <input id="edit-firm-id" type="hidden">
+                    <input id="f-name" placeholder="Název firmy" class="w-full p-3 rounded-xl font-bold mb-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input id="f-bowl" type="number" placeholder="Bowl Kč" class="p-3 rounded-xl font-bold">
+                        <input id="f-soup" type="number" placeholder="Soup Kč" class="p-3 rounded-xl font-bold">
+                    </div>
                     <button onclick="saveFirm()" class="w-full bg-blue-600 text-white py-3 mt-2 rounded-xl font-black uppercase">Uložit Firmu</button>
                 </div>
-                <div id="admin-firms-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                <div id="admin-firms-list" class="space-y-2 max-h-48 overflow-y-auto custom-scroll"></div>
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border-t-8 border-orange-500 text-xs">
                 <h3 class="font-black text-orange-600 mb-4 uppercase italic">Zákazníci a PINy</h3>
-                <div id="admin-cust-ui" class="space-y-2 mb-4 bg-orange-50 p-4 rounded-2xl">
-                    <input id="edit-cust-id" type="hidden"><input id="c-name" placeholder="Jméno" class="w-full p-3 rounded-xl font-bold mb-2">
-                    <div class="grid grid-cols-2 gap-2"><select id="c-firm" class="p-3 rounded-xl font-bold"></select><input id="c-pin" type="number" placeholder="PIN" class="p-3 rounded-xl font-bold"></div>
+                <div class="space-y-2 mb-4 bg-orange-50 p-4 rounded-2xl">
+                    <input id="edit-cust-id" type="hidden">
+                    <input id="c-name" placeholder="Jméno" class="w-full p-3 rounded-xl font-bold mb-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="c-firm" class="p-3 rounded-xl font-bold"></select>
+                        <input id="c-pin" type="number" placeholder="PIN" class="p-3 rounded-xl font-bold">
+                    </div>
                     <button onclick="saveCustomer()" class="w-full bg-orange-500 text-white py-3 mt-2 rounded-xl font-black uppercase">Uložit Zákazníka</button>
                 </div>
-                <div id="admin-customers-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                <div id="admin-customers-list" class="space-y-2 max-h-48 overflow-y-auto custom-scroll"></div>
             </div>
         </div>
 
         <div class="bg-slate-800 p-8 rounded-[3rem] text-white shadow-2xl">
             <h2 class="font-black text-lg uppercase mb-4 italic text-orange-400 text-center">📦 Sklad Jídel</h2>
             <div class="bg-slate-700 p-6 rounded-3xl mb-6 grid md:grid-cols-4 gap-3">
-                <input id="edit-meal-id" type="hidden"><input id="m-name" placeholder="Název" class="p-4 rounded-2xl bg-slate-600 text-white"><input id="m-desc" placeholder="Popis" class="p-4 rounded-2xl bg-slate-600 text-white">
-                <select id="m-cat" class="p-4 rounded-2xl bg-slate-600 text-white"><option>Bowl</option><option>Polévka</option></select>
+                <input id="edit-meal-id" type="hidden">
+                <input id="m-name" placeholder="Název" class="p-4 rounded-2xl bg-slate-600 text-white font-bold">
+                <input id="m-desc" placeholder="Popis (zobrazí se zákazníkovi)" class="p-4 rounded-2xl bg-slate-600 text-white font-bold">
+                <select id="m-cat" class="p-4 rounded-2xl bg-slate-600 text-white font-bold">
+                    <option>Bowl</option>
+                    <option>Polévka</option>
+                </select>
                 <button onclick="saveMeal()" class="bg-orange-500 text-white px-8 rounded-2xl font-black uppercase">Uložit</button>
             </div>
             <div id="library-list" class="grid grid-cols-2 md:grid-cols-5 gap-3 max-h-80 overflow-y-auto custom-scroll"></div>
@@ -87,20 +94,20 @@
         <div id="user-login" class="max-w-md mx-auto bg-white p-10 rounded-[3.5rem] shadow-2xl text-center mt-10">
             <h2 class="text-2xl font-black mb-6 text-orange-500 uppercase italic">Přihlaš se</h2>
             <div class="relative mb-4">
-                <input id="user-search-input" type="text" placeholder="Napiš své jméno..." oninput="searchUser(this)" class="w-full p-5 rounded-2xl bg-slate-100 font-bold text-center">
+                <input id="user-search-input" type="text" placeholder="Začni psát jméno..." oninput="searchUser(this)" class="w-full p-5 rounded-2xl bg-slate-100 font-bold text-center">
                 <div id="user-search-results" class="search-results hidden absolute w-full mt-2 left-0 shadow-2xl bg-white rounded-2xl overflow-hidden"></div>
             </div>
             <input id="selected-user-data" type="hidden">
             <input id="user-pin-input" type="password" inputmode="numeric" placeholder="PIN" class="w-full p-5 rounded-2xl bg-slate-100 font-bold mb-6 text-center text-4xl tracking-widest">
-            <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-3xl font-black text-xl uppercase">Vstoupit</button>
+            <button onclick="userLogin()" class="bg-orange-500 text-white w-full py-5 rounded-3xl font-black text-xl uppercase shadow-lg">Vstoupit</button>
         </div>
 
         <div id="user-order-zone" class="hidden">
             <div class="bg-white p-6 rounded-[2.5rem] shadow-xl mb-6 text-center">
                 <h2 id="active-user-display" class="font-black text-xl italic uppercase text-slate-800"></h2>
-                <div id="published-status-msg" class="hidden text-red-500 font-bold mt-2">MENU JEŠTĚ NEBYLO ZVEŘEJNĚNO</div>
+                <div id="published-status-msg" class="hidden text-red-500 font-bold mt-2 italic">MENU JEŠTĚ NEBYLO ZVEŘEJNĚNO</div>
                 <div class="flex justify-between items-center mt-4 bg-slate-100 p-4 rounded-2xl">
-                    <span class="font-black uppercase text-xs">Celkem k úhradě:</span>
+                    <span class="font-black uppercase text-xs">Celkem:</span>
                     <span id="total-price" class="font-black text-xl text-orange-600">0 Kč</span>
                 </div>
                 <button onclick="submitOrder()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg mt-4">Uložit objednávku ✅</button>
@@ -126,14 +133,17 @@
         function secureView(v) { if(prompt("Heslo:") === ADMIN_PASS) switchView(v); }
         function switchView(v) { document.querySelectorAll('section').forEach(s => s.classList.add('hidden')); document.getElementById('view-' + v).classList.remove('hidden'); if(v === 'admin') renderAdmin(); if(v === 'orders') renderKitchen(); }
 
-        // --- CORE DATA ---
+        // --- CORE DATA & LOGIN ---
         async function initLogin() {
             const { data: c } = await _supabase.from('customers').select('*').order('name');
-            const { data: f } = await _supabase.from('firms').select('*');
+            const { data: f } = await _supabase.from('firms').select('*').order('name');
             allCustomers = c?.map(p => {
                 const fr = f?.find(x => x.name.trim() === p.firm_name.trim());
                 return { ...p, pb: fr ? fr.custom_price_bowl : 169, ps: fr ? fr.custom_price_soup : 49 };
             }) || [];
+            // Update firm dropdown in admin
+            const firmSelect = document.getElementById('c-firm');
+            if(firmSelect) firmSelect.innerHTML = f?.map(fr => `<option value="${fr.name}">${fr.name}</option>`).join('') || '';
         }
 
         function searchUser(input) {
@@ -146,9 +156,10 @@
 
         function selectUserForLogin(name, pin, firm, pb, ps) {
             document.getElementById('user-search-input').value = name;
-            const hidden = document.getElementById('selected-user-data');
-            hidden.dataset.name = name; hidden.dataset.pin = pin; hidden.dataset.firm = firm; hidden.dataset.pb = pb; hidden.dataset.ps = ps;
+            const h = document.getElementById('selected-user-data');
+            h.dataset.name = name; h.dataset.pin = pin; h.dataset.firm = firm; h.dataset.pb = pb; h.dataset.ps = ps;
             document.getElementById('user-search-results').classList.add('hidden');
+            document.getElementById('user-pin-input').focus();
         }
 
         async function userLogin() {
@@ -163,13 +174,87 @@
             } else { alert("Chybné jméno nebo PIN!"); }
         }
 
-        // --- ADMIN FUNKCE ---
+        // --- ADMIN FUNKCE (Firms, Customers, Meals) ---
         async function renderAdmin() {
-            const { data } = await _supabase.from('meals').select('*').order('name');
-            globalMeals = data || [];
+            const { data: m } = await _supabase.from('meals').select('*').order('name');
+            globalMeals = m || [];
             renderLibraryUI(); await renderPlanner(); await renderFirms(); await renderCustomers();
         }
 
+        // Firmy
+        async function renderFirms() {
+            const { data } = await _supabase.from('firms').select('*').order('name');
+            document.getElementById('admin-firms-list').innerHTML = data?.map(f => `
+                <div class="flex justify-between p-2 border-b items-center bg-slate-50 rounded-xl mb-1">
+                    <span class="font-bold">${f.name} (B:${f.custom_price_bowl} S:${f.custom_price_soup})</span>
+                    <div class="flex gap-2">
+                        <button onclick="prepFirmEdit('${f.id}')" class="text-blue-500 font-bold">Edit</button>
+                        <button onclick="delFirm('${f.id}')" class="text-red-500 font-bold">✕</button>
+                    </div>
+                </div>`).join("") || "";
+        }
+        async function saveFirm() {
+            const id = document.getElementById('edit-firm-id').value, n = document.getElementById('f-name').value, b = document.getElementById('f-bowl').value, s = document.getElementById('f-soup').value;
+            if(id) await _supabase.from('firms').update({ name: n, custom_price_bowl: b, custom_price_soup: s }).eq('id', id);
+            else await _supabase.from('firms').insert([{ name: n, custom_price_bowl: b, custom_price_soup: s }]);
+            document.getElementById('edit-firm-id').value = ""; document.getElementById('f-name').value = ""; renderFirms(); initLogin();
+        }
+        function prepFirmEdit(id) {
+            _supabase.from('firms').select('*').eq('id', id).single().then(({data:f}) => {
+                document.getElementById('edit-firm-id').value=f.id; document.getElementById('f-name').value=f.name; document.getElementById('f-bowl').value=f.custom_price_bowl; document.getElementById('f-soup').value=f.custom_price_soup;
+            });
+        }
+        async function delFirm(id) { if(confirm("Smazat firmu?")) { await _supabase.from('firms').delete().eq('id', id); renderFirms(); } }
+
+        // Zákazníci
+        async function renderCustomers() {
+            const { data } = await _supabase.from('customers').select('*').order('name');
+            document.getElementById('admin-customers-list').innerHTML = data?.map(c => `
+                <div class="flex justify-between p-2 border-b items-center bg-slate-50 rounded-xl mb-1">
+                    <span class="font-bold">${c.name} (${c.firm_name})</span>
+                    <div class="flex gap-2">
+                        <button onclick="prepCustEdit('${c.id}')" class="text-blue-500 font-bold">Edit</button>
+                        <button onclick="delCust('${c.id}')" class="text-red-500 font-bold">✕</button>
+                    </div>
+                </div>`).join("") || "";
+        }
+        async function saveCustomer() {
+            const id = document.getElementById('edit-cust-id').value, n = document.getElementById('c-name').value, f = document.getElementById('c-firm').value, p = document.getElementById('c-pin').value;
+            if(id) await _supabase.from('customers').update({ name: n, firm_name: f, pin: p }).eq('id', id);
+            else await _supabase.from('customers').insert([{ name: n, firm_name: f, pin: p }]);
+            document.getElementById('edit-cust-id').value = ""; document.getElementById('c-name').value = ""; document.getElementById('c-pin').value = ""; renderCustomers(); initLogin();
+        }
+        function prepCustEdit(id) {
+            _supabase.from('customers').select('*').eq('id', id).single().then(({data:c}) => {
+                document.getElementById('edit-cust-id').value=c.id; document.getElementById('c-name').value=c.name; document.getElementById('c-firm').value=c.firm_name; document.getElementById('c-pin').value=c.pin;
+            });
+        }
+        async function delCust(id) { if(confirm("Smazat zákazníka?")) { await _supabase.from('customers').delete().eq('id', id); renderCustomers(); } }
+
+        // Sklad jídel
+        function renderLibraryUI() {
+            document.getElementById('library-list').innerHTML = globalMeals.map(m => `
+                <div class="bg-slate-700 p-3 rounded-2xl flex flex-col justify-between text-[10px]">
+                    <p class="font-bold truncate">${m.name}</p>
+                    <div class="flex gap-1 mt-2">
+                        <button onclick="prepMealEdit('${m.id}')" class="bg-slate-600 p-1 rounded font-black w-full text-orange-400">EDIT</button>
+                        <button onclick="delLib('${m.id}')" class="bg-slate-600 p-1 rounded font-black w-full text-red-400">✕</button>
+                    </div>
+                </div>`).join("");
+        }
+        async function saveMeal() {
+            const id = document.getElementById('edit-meal-id').value, n = document.getElementById('m-name').value, d = document.getElementById('m-desc').value, c = document.getElementById('m-cat').value;
+            if(id) await _supabase.from('meals').update({ name: n, description: d, category: c }).eq('id', id);
+            else await _supabase.from('meals').insert([{ name: n, description: d, category: c }]);
+            document.getElementById('edit-meal-id').value = ""; document.getElementById('m-name').value = ""; document.getElementById('m-desc').value = ""; renderAdmin();
+        }
+        function prepMealEdit(id) {
+            const m = globalMeals.find(x => x.id === id);
+            document.getElementById('edit-meal-id').value=m.id; document.getElementById('m-name').value=m.name; document.getElementById('m-desc').value=m.description || ""; document.getElementById('m-cat').value=m.category;
+        }
+        async function delLib(id) { if(confirm("Smazat jídlo ze skladu?")) { await _supabase.from('meals').delete().eq('id', id); renderAdmin(); } }
+
+        // --- PLÁNOVAČ ---
         async function renderPlanner() {
             const { data: menu } = await _supabase.from('meal_templates').select('*');
             const build = (w) => DNY.map(d => {
@@ -177,24 +262,22 @@
                 const s = dm.filter(m => m.category === 'Polévka'), b = dm.filter(m => m.category !== 'Polévka');
                 return `<div class="bg-white p-4 rounded-2xl shadow-sm border mb-3 text-xs text-left">
                     <div class="flex justify-between font-black uppercase text-slate-400 mb-2"><span>${d}</span><span>${dm.length}/4</span></div>
-                    <div class="mb-2">${s.map(m => `<div class="flex justify-between bg-blue-50 p-2 rounded mb-1"><span>${m.name}</span><button onclick="delPlan('${m.id}')" class="text-red-400">✕</button></div>`).join('')}</div>
-                    <div class="mb-2">${b.map(m => `<div class="flex justify-between bg-slate-50 p-2 rounded mb-1"><span>${m.name}</span><button onclick="delPlan('${m.id}')" class="text-red-400">✕</button></div>`).join('')}</div>
-                    <input type="text" placeholder="🔍 Přidat..." oninput="searchMeal(this,'${d}','${w}')" class="w-full p-2 rounded-xl bg-slate-100 border-none text-[10px]">
+                    <div class="mb-2">${s.map(m => `<div class="flex justify-between bg-blue-50 p-2 rounded mb-1 font-bold"><span>${m.name}</span><button onclick="delPlan('${m.id}')" class="text-red-400">✕</button></div>`).join('')}</div>
+                    <div class="mb-2">${b.map(m => `<div class="flex justify-between bg-slate-50 p-2 rounded mb-1 font-bold"><span>${m.name}</span><button onclick="delPlan('${m.id}')" class="text-red-400">✕</button></div>`).join('')}</div>
+                    <input type="text" placeholder="🔍 Přidat jídlo..." oninput="searchMeal(this,'${d}','${w}')" class="w-full p-2 rounded-xl bg-slate-100 border-none text-[10px]">
                     <div id="results-${w}-${d}" class="search-results hidden border"></div>
                 </div>`;
             }).join('');
             document.getElementById('admin-plan-current').innerHTML = build('current');
             document.getElementById('admin-plan-next').innerHTML = build('next');
         }
-
         function searchMeal(input, den, week) {
             const q = input.value.toLowerCase(), res = document.getElementById(`results-${week}-${den}`);
             if (q.length < 1) { res.classList.add('hidden'); return; }
             const fil = globalMeals.filter(m => m.name.toLowerCase().includes(q));
-            res.classList.remove('hidden');
-            res.innerHTML = fil.map(m => `<div onclick="addMealToPlan('${m.id}','${den}','${week}')" class="p-2 hover:bg-orange-50 cursor-pointer flex justify-between"><span>${m.name}</span><span class="text-[8px] uppercase">${m.category}</span></div>`).join('');
+            res.classList.toggle('hidden', fil.length === 0);
+            res.innerHTML = fil.map(m => `<div onclick="addMealToPlan('${m.id}','${den}','${week}')" class="p-2 hover:bg-orange-50 cursor-pointer flex justify-between font-bold"><span>${m.name}</span><span class="text-[8px] uppercase text-slate-400">${m.category}</span></div>`).join('');
         }
-
         async function addMealToPlan(libId, den, week) {
             const lib = globalMeals.find(m => m.id === libId);
             await _supabase.from('meal_templates').insert([{ name: lib.name, description: lib.description, category: lib.category, day: den, week: week }]);
@@ -202,48 +285,25 @@
         }
         async function delPlan(id) { await _supabase.from('meal_templates').delete().eq('id', id); renderPlanner(); }
 
-        // --- FIRMY, CUSTOMERS, SKLAD ---
-        async function renderFirms() {
-            const { data } = await _supabase.from('firms').select('*').order('name');
-            document.getElementById('admin-firms-list').innerHTML = data?.map(f => `<div class="flex justify-between p-2 border-b text-[10px]"><span>${f.name} (B:${f.custom_price_bowl} S:${f.custom_price_soup})</span><button onclick="delFirm('${f.id}')" class="text-red-500">✕</button></div>`).join("");
-            document.getElementById('c-firm').innerHTML = data?.map(f => `<option value="${f.name}">${f.name}</option>`).join("");
-        }
-        async function saveFirm() { await _supabase.from('firms').insert([{ name: document.getElementById('f-name').value, custom_price_bowl: document.getElementById('f-bowl').value, custom_price_soup: document.getElementById('f-soup').value }]); renderFirms(); }
-        async function delFirm(id) { await _supabase.from('firms').delete().eq('id', id); renderFirms(); }
-
-        async function renderCustomers() {
-            const { data } = await _supabase.from('customers').select('*').order('name');
-            document.getElementById('admin-customers-list').innerHTML = data?.map(c => `<div class="flex justify-between p-2 border-b text-[10px]"><span>${c.name} (${c.firm_name})</span><button onclick="delCust('${c.id}')" class="text-red-500">✕</button></div>`).join("");
-            initLogin();
-        }
-        async function saveCustomer() { await _supabase.from('customers').insert([{ name: document.getElementById('c-name').value, firm_name: document.getElementById('c-firm').value, pin: document.getElementById('c-pin').value }]); renderCustomers(); }
-        async function delCust(id) { await _supabase.from('customers').delete().eq('id', id); renderCustomers(); }
-
-        function renderLibraryUI() {
-            document.getElementById('library-list').innerHTML = globalMeals.map(m => `<div class="bg-slate-700 p-2 rounded text-[10px] flex justify-between"><span>${m.name}</span><button onclick="delLib('${m.id}')" class="text-red-400">✕</button></div>`).join("");
-        }
-        async function saveMeal() { await _supabase.from('meals').insert([{ name: document.getElementById('m-name').value, description: document.getElementById('m-desc').value, category: document.getElementById('m-cat').value }]); renderAdmin(); }
-        async function delLib(id) { await _supabase.from('meals').delete().eq('id', id); renderAdmin(); }
-
-        // --- ZÁKAZNICKÉ MENU ---
+        // --- ZÁKAZNICKÉ MENU (S POPISY) ---
         async function renderUserMenu() {
             const isPub = localStorage.getItem('menu_published') === 'true';
             document.getElementById('published-status-msg').classList.toggle('hidden', isPub);
             document.getElementById('user-menu-grid').classList.toggle('hidden', !isPub);
             if(!isPub) return;
-
             const { data: menu } = await _supabase.from('meal_templates').select('*');
             const draw = (w, id) => {
-                let h = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-xs mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
+                let h = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-[10px] mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
                 DNY.forEach(d => {
                     const dm = menu?.filter(m => m.day === d && m.week === w) || [];
                     if(dm.length) {
-                        h += `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><p class="font-black uppercase text-[10px] text-slate-400 mb-2">${d}</p>`;
+                        h += `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><p class="font-black uppercase text-[10px] text-slate-400 mb-2 border-b pb-1">${d}</p>`;
                         dm.forEach(m => {
                             const u = `${m.name} (${d})`, isS = selectedItems[u];
                             const price = m.category.toLowerCase().includes("polévka") ? currentUser.ps : currentUser.pb;
-                            h += `<div onclick="toggleSelect('${u}', ${price})" class="p-3 rounded-2xl border-2 mb-2 cursor-pointer ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between font-bold text-xs"><span>${m.name}</span><span>${price} Kč</span></div>
+                            h += `<div onclick="toggleSelect('${u}', ${price})" class="p-3 rounded-2xl border-2 mb-2 cursor-pointer transition-all ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
+                                <div class="flex justify-between font-bold text-sm"><span>${m.name}</span><span class="text-orange-600">${price} Kč</span></div>
+                                ${m.description ? `<p class="text-[10px] text-slate-500 italic mt-1">${m.description}</p>` : ''}
                             </div>`;
                         });
                         h += `</div>`;
@@ -253,17 +313,14 @@
             };
             draw('current', 'list-current'); draw('next', 'list-next');
         }
-
         function toggleSelect(n, p) { if(selectedItems[n]) delete selectedItems[n]; else selectedItems[n] = { name: n, price: p }; updateTotal(); renderUserMenu(); }
         function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
-        
         async function submitOrder() {
             const items = Object.keys(selectedItems).join(", ");
             await _supabase.from('orders').delete().eq('user_name', currentUser.name);
-            await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: items }]);
+            if(items) await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: items }]);
             alert("Objednávka uložena!");
         }
-
         async function loadOrderHistory() {
             const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1);
             selectedItems = {};
@@ -281,8 +338,7 @@
             const { data: orders } = await _supabase.from('orders').select('*');
             const cont = document.getElementById('view-orders');
             cont.innerHTML = '<h2 class="text-3xl font-black uppercase italic text-center mb-8">Kuchyň 👨‍🍳</h2>';
-            if (!orders?.length) { cont.innerHTML += '<p class="text-center">Žádné objednávky</p>'; return; }
-
+            if (!orders?.length) { cont.innerHTML += '<p class="text-center font-bold text-slate-400">Žádné objednávky</p>'; return; }
             DNY.forEach(d => {
                 let counts = {}, firms = {}, has = false;
                 orders.forEach(o => {
@@ -296,17 +352,17 @@
                     });
                 });
                 if(has) {
-                    let h = `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-l-8 border-green-500 mb-8 max-w-4xl mx-auto"><h3 class="text-2xl font-black uppercase mb-4 text-green-600">${d}</h3><div class="grid md:grid-cols-2 gap-6"><div><p class="font-bold mb-2">CELKEM:</p>`;
-                    for(let m in counts) h += `<div class="flex justify-between border-b py-1"><span>${m}</span><span class="font-bold">${counts[m]}x</span></div>`;
-                    h += `</div><div><p class="font-bold mb-2">DLE FIREM:</p>`;
-                    for(let f in firms) { h += `<div class="mb-2 p-2 bg-slate-50 rounded"><strong>${f}:</strong>`; for(let m in firms[f]) h += `<div class="text-xs">${m} - ${firms[f][m]}x</div>`; h += `</div>`; }
+                    let h = `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-l-8 border-green-500 mb-8 max-w-4xl mx-auto"><h3 class="text-2xl font-black uppercase mb-4 text-green-600">${d}</h3><div class="grid md:grid-cols-2 gap-6"><div><p class="font-black text-[10px] text-slate-400 mb-2 uppercase">Celkem uvařit:</p>`;
+                    for(let m in counts) h += `<div class="flex justify-between border-b py-2 font-bold"><span>${m}</span><span class="bg-orange-100 px-2 rounded-lg text-orange-600">${counts[m]}x</span></div>`;
+                    h += `</div><div><p class="font-black text-[10px] text-slate-400 mb-2 uppercase">Dle firem:</p>`;
+                    for(let f in firms) { h += `<div class="mb-3 p-3 bg-slate-50 rounded-2xl border"><strong>${f}:</strong>`; for(let m in firms[f]) h += `<div class="text-xs flex justify-between"><span>${m}</span><span>${firms[f][m]}x</span></div>`; h += `</div>`; }
                     cont.innerHTML += h + `</div></div></div>`;
                 }
             });
         }
 
         function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
-        async function rolloverWeek() { if(confirm("Reset týdne?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name',''); await _supabase.from('meal_templates').delete().eq('week','current'); await _supabase.from('meal_templates').update({week:'current'}).eq('week','next'); renderAdmin(); } }
+        async function rolloverWeek() { if(confirm("Reset týdne a posun menu?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name',''); await _supabase.from('meal_templates').delete().eq('week','current'); await _supabase.from('meal_templates').update({week:'current'}).eq('week','next'); renderAdmin(); } }
     </script>
 </body>
 </html>
