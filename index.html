@@ -227,17 +227,31 @@
     const opt = sel.options[sel.selectedIndex];
     
     if(opt && pin === opt.dataset.pin) {
-        // Zde je důležité načíst ceny z datasetu, které jsme tam dali v initLogin
+        // 1. Načtení dat o uživateli a JEHO cenách z datasetu
         currentUser = { 
             name: opt.value, 
             firm: opt.dataset.firm, 
-            pb: Number(opt.dataset.pb), // Cena za Bowl
-            ps: Number(opt.dataset.ps)  // Cena za Polévku
+            pb: Number(opt.dataset.pb), // Cena za Bowl pro tuhle firmu
+            ps: Number(opt.dataset.ps)  // Cena za Polévku pro tuhle firmu
         };
-        // ... zbytek kódu ...
+
+        // 2. Přepnutí obrazovky (schovat login, ukázat menu)
+        document.getElementById('user-login').classList.add('hidden'); 
+        document.getElementById('user-order-zone').classList.remove('hidden');
+
+        // 3. Zobrazení jména přihlášeného uživatele
+        document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name} (${currentUser.firm})`;
+
+        // 4. Resetování košíku a načtení historie objednávek z databáze
+        selectedItems = {}; 
+        await loadOrderHistory(); 
+
+        // 5. Vykreslení jídelníčku s uživatelovými cenami
+        renderUserMenu();
+    } else {
+        alert("Chybný PIN!");
     }
 }
-
 
         async function renderUserMenu() {
             const isPub = localStorage.getItem('menu_published') === 'true';
