@@ -114,7 +114,14 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const DNY = ["Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek"];
         const ADMIN_PASS = "bomba2026";
-        let currentUser = null, selectedItems = {}, globalMeals = [];
+                let currentUser = null;
+        let selectedItems = {};
+        let globalMeals = [];
+        let allCustomers = []; // Toto ti tam chybělo pro to hledání
+
+        // Tento řádek zajistí, že se data načtou hned při startu:
+        window.onload = async () => { await initLogin(); };
+
 
         function secureView(v) { if(prompt("Heslo:") === ADMIN_PASS) switchView(v); }
         function switchView(v) { document.querySelectorAll('section').forEach(s => s.classList.add('hidden')); document.getElementById('view-' + v).classList.remove('hidden'); if(v === 'admin') renderAdmin(); if(v === 'orders') renderKitchen(); }
@@ -406,26 +413,7 @@
 
         function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
         async function rolloverWeek() { if(confirm("Reset objednávek a posun menu?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name', ''); await _supabase.from('meal_templates').delete().eq('week', 'current'); await _supabase.from('meal_templates').update({ week: 'current' }).eq('week', 'next'); renderAdmin(); } }
-        async function initLogin() {
-    const { data: c } = await _supabase.from('customers').select('*').order('name');
-    const { data: f } = await _supabase.from('firms').select('*');
-    const sel = document.getElementById('user-select');
-    
-    if (sel) { 
-        sel.innerHTML = '<option value="">-- JMÉNO --</option>'; 
-        c?.forEach(p => { 
-            // Najdeme firmu - POZOR: Jména firem musí v obou tabulkách sedět na písmeno přesně!
-            const fr = f?.find(x => x.name.trim() === p.firm_name.trim()); 
-            
-            // Pokud firmu nenajde, dáme 0, abychom viděli, že je chyba v propojení
-            const bPrice = fr ? fr.custom_price_bowl : 169;
-            const sPrice = fr ? fr.custom_price_soup : 49;
-            
-            sel.innerHTML += `<option value="${p.name}" 
-                                data-pin="${p.pin}" 
-                                data-firm="${p.firm_name}" 
-                                data-pb="${bPrice}" 
-                                data-ps="${sPrice}">${p.name} (${p.firm_name})</option>`; 
+        
         }); 
     }
 }
