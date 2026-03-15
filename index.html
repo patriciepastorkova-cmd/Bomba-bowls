@@ -222,14 +222,22 @@
 
         // --- ZÁKAZNÍK ---
         async function userLogin() {
-            const sel = document.getElementById('user-select'), pin = document.getElementById('user-pin-input').value, opt = sel.options[sel.selectedIndex];
-            if(opt && pin === opt.dataset.pin) {
-                currentUser = { name: opt.value, firm: opt.dataset.firm, pb: Number(opt.dataset.pb), ps: Number(opt.dataset.ps) };
-                document.getElementById('user-login').classList.add('hidden'); document.getElementById('user-order-zone').classList.remove('hidden');
-                document.getElementById('active-user-display').innerText = `🥗 ${currentUser.name}`;
-                await loadOrderHistory(); renderUserMenu();
-            } else alert("Chybný PIN!");
-        }
+    const sel = document.getElementById('user-select');
+    const pin = document.getElementById('user-pin-input').value;
+    const opt = sel.options[sel.selectedIndex];
+    
+    if(opt && pin === opt.dataset.pin) {
+        // Zde je důležité načíst ceny z datasetu, které jsme tam dali v initLogin
+        currentUser = { 
+            name: opt.value, 
+            firm: opt.dataset.firm, 
+            pb: Number(opt.dataset.pb), // Cena za Bowl
+            ps: Number(opt.dataset.ps)  // Cena za Polévku
+        };
+        // ... zbytek kódu ...
+    }
+}
+
 
         async function renderUserMenu() {
             const isPub = localStorage.getItem('menu_published') === 'true';
@@ -260,7 +268,27 @@
         function toggleSelect(n, p) { if(selectedItems[n]) delete selectedItems[n]; else selectedItems[n] = { name: n, price: p }; updateTotal(); renderUserMenu(); }
         function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
         async function submitOrder() { const items = Object.keys(selectedItems).join(", "); await _supabase.from('orders').delete().eq('user_name', currentUser.name); await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: items }]); alert("Uloženo!"); }
-        async function loadOrderHistory() { const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); if(data?.[0]?.items) data[0].items.split(", ").forEach(it => { if(it) selectedItems[it] = { name: it, price: it.includes('Polévka') ? currentUser.ps : currentUser.pb }; }); updateTotal(); }
+        async function loadOrderHistory() { 
+    const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1); 
+    selectedItems = {}; // Resetovat košík
+    
+    if(data?.[0]?.items) {
+        const itemsArray = data[0].items.split(", ");
+        itemsArray.forEach(itemName => { 
+            if(itemName) {
+                // Pokud název obsahuje "Polévka" (což u polévek v menu máš), použije cenu soup
+                // Jinak použije cenu bowl
+                const isSoup = itemName.toLowerCase().includes('polévka');
+                selectedItems[itemName] = { 
+                    name: itemName, 
+                    price: isSoup ? currentUser.ps : currentUser.pb 
+                }; 
+            }
+        }); 
+    }
+    updateTotal(); 
+}
+
 
         // --- KUCHYŇ ---
         async function renderKitchen() {
@@ -285,11 +313,27 @@
         function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
         async function rolloverWeek() { if(confirm("Reset objednávek a posun menu?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name', ''); await _supabase.from('meal_templates').delete().eq('week', 'current'); await _supabase.from('meal_templates').update({ week: 'current' }).eq('week', 'next'); renderAdmin(); } }
         async function initLogin() {
-            const { data: c } = await _supabase.from('customers').select('*').order('name');
-            const { data: f } = await _supabase.from('firms').select('*');
-            const sel = document.getElementById('user-select');
-            if(sel) { sel.innerHTML = '<option value="">-- JMÉNO --</option>'; c?.forEach(p => { const fr = f?.find(x => x.name === p.firm_name); sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${fr?.custom_price_bowl || 169}" data-ps="${fr?.custom_price_soup || 49}">${p.name}</option>`; }); }
-        }
+    const { data: c } = await _supabase.from('customers').select('*').order('name');
+    const { data: f } = await _supabase.from('firms').select('*');
+    const sel = document.getElementById('user-select');
+    
+    if(sel) { 
+        sel.innerHTML = '<option value="">-- JMÉNO --</option>'; 
+        c?.forEach(p => { 
+            // Najdeme firmu zákazníka, abychom získali její ceny
+            const fr = f?.find(x => x.name === p.firm_name); 
+            const bowlPrice = fr?.custom_price_bowl || 169;
+            const soupPrice = fr?.custom_price_soup || 49;
+            
+            sel.innerHTML += `<option value="${p.name}" 
+                                data-pin="${p.pin}" 
+                                data-firm="${p.firm_name}" 
+                                data-pb="${bowlPrice}" 
+                                data-ps="${soupPrice}">${p.name}</option>`; 
+        }); 
+    }
+}
+
         initLogin();
     </script>
 </body>
