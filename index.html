@@ -396,7 +396,7 @@
                                                 </p>`; 
                                         for(let m in firms[f]) {
                                             h += `<div class="flex justify-between text-xs font-bold py-1">
-                                                    <span class="text-slate-600">${m}</span>
+                       i                             <span class="text-slate-600">${m}</span>
                                                     <span class="text-slate-900">${firms[f][m]}x</span>
                                                   </div>`;
                                         }
@@ -414,9 +414,7 @@
         function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
         async function rolloverWeek() { if(confirm("Reset objednávek a posun menu?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name', ''); await _supabase.from('meal_templates').delete().eq('week', 'current'); await _supabase.from('meal_templates').update({ week: 'current' }).eq('week', 'next'); renderAdmin(); } }
         
-        }); 
-    }
-}
+
 
         initLogin();
         window.onload = () => { initLogin(); };
