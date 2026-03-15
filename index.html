@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BOMBA BOWLS - MASTER</title>
+    <title>BOMBA BOWLS - Divadelní klub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -288,7 +288,7 @@
             const { data: c } = await _supabase.from('customers').select('*').order('name');
             const { data: f } = await _supabase.from('firms').select('*');
             const sel = document.getElementById('user-select');
-            if(sel) { sel.innerHTML = '<option value="">-- JMÉNO --</option>'; c?.forEach(p => { const fr = f?.find(x => x.name === p.firm_name); sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${fr?.custom_price_bowl || 180}" data-ps="${fr?.custom_price_soup || 50}">${p.name}</option>`; }); }
+            if(sel) { sel.innerHTML = '<option value="">-- JMÉNO --</option>'; c?.forEach(p => { const fr = f?.find(x => x.name === p.firm_name); sel.innerHTML += `<option value="${p.name}" data-pin="${p.pin}" data-firm="${p.firm_name}" data-pb="${fr?.custom_price_bowl || 169}" data-ps="${fr?.custom_price_soup || 49}">${p.name}</option>`; }); }
         }
         initLogin();
     </script>
