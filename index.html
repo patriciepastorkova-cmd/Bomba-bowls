@@ -286,33 +286,67 @@
         async function delPlan(id) { await _supabase.from('meal_templates').delete().eq('id', id); renderPlanner(); }
 
         // --- ZÁKAZNICKÉ MENU (S POPISY) ---
-        async function renderUserMenu() {
-            const isPub = localStorage.getItem('menu_published') === 'true';
-            document.getElementById('published-status-msg').classList.toggle('hidden', isPub);
-            document.getElementById('user-menu-grid').classList.toggle('hidden', !isPub);
-            if(!isPub) return;
-            const { data: menu } = await _supabase.from('meal_templates').select('*');
+                async function renderUserMenu() {
+            // Safari fix: Pokud localStorage selže, budeme předpokládat, že je menu publikované, 
+            // nebo si to ověříme přímo.
+            let isPub = localStorage.getItem('menu_published') === 'true';
+            
+            // Pojistka: Pokud jsme v Safari a localStorage vrátí null, zkusíme menu přesto načíst
+            if (localStorage.getItem('menu_published') === null) {
+                isPub = true; 
+            }
+
+            const msgEl = document.getElementById('published-status-msg');
+            const gridEl = document.getElementById('user-menu-grid');
+
+            if(!isPub) {
+                if(msgEl) msgEl.classList.remove('hidden');
+                if(gridEl) gridEl.classList.add('hidden');
+                return;
+            }
+            
+            if(msgEl) msgEl.classList.add('hidden');
+            if(gridEl) gridEl.classList.remove('hidden');
+
+            const { data: menu, error } = await _supabase.from('meal_templates').select('*');
+            
+            if (error) {
+                console.error("Chyba načítání menu:", error);
+                return;
+            }
+
             const draw = (w, id) => {
+                const target = document.getElementById(id);
+                if (!target) return;
+
                 let h = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-[10px] mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
+                
                 DNY.forEach(d => {
                     const dm = menu?.filter(m => m.day === d && m.week === w) || [];
                     if(dm.length) {
                         h += `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><p class="font-black uppercase text-[10px] text-slate-400 mb-2 border-b pb-1">${d}</p>`;
                         dm.forEach(m => {
-                            const u = `${m.name} (${d})`, isS = selectedItems[u];
-                            const price = m.category.toLowerCase().includes("polévka") ? currentUser.ps : currentUser.pb;
+                            const u = `${m.name} (${d})`;
+                            const isS = selectedItems[u];
+                            const price = (m.category || "").toLowerCase().includes("polévka") ? currentUser.ps : currentUser.pb;
+                            
                             h += `<div onclick="toggleSelect('${u}', ${price})" class="p-3 rounded-2xl border-2 mb-2 cursor-pointer transition-all ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between font-bold text-sm"><span>${m.name}</span><span class="text-orange-600">${price} Kč</span></div>
+                                <div class="flex justify-between font-bold text-sm">
+                                    <span>${m.name}</span>
+                                    <span class="text-orange-600">${price} Kč</span>
+                                </div>
                                 ${m.description ? `<p class="text-[10px] text-slate-500 italic mt-1">${m.description}</p>` : ''}
                             </div>`;
                         });
                         h += `</div>`;
                     }
                 });
-                document.getElementById(id).innerHTML = h;
+                target.innerHTML = h;
             };
-            draw('current', 'list-current'); draw('next', 'list-next');
+            draw('current', 'list-current'); 
+            draw('next', 'list-next');
         }
+
         function toggleSelect(n, p) { if(selectedItems[n]) delete selectedItems[n]; else selectedItems[n] = { name: n, price: p }; updateTotal(); renderUserMenu(); }
         function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
         async function submitOrder() {
