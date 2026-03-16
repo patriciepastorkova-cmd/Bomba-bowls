@@ -278,23 +278,19 @@
             res.classList.toggle('hidden', fil.length === 0);
             res.innerHTML = fil.map(m => `<div onclick="addMealToPlan('${m.id}','${den}','${week}')" class="p-2 hover:bg-orange-50 cursor-pointer flex justify-between font-bold"><span>${m.name}</span><span class="text-[8px] uppercase text-slate-400">${m.category}</span></div>`).join('');
         }
-        async function addMealToPlan(libId, den, week) {
+                async function addMealToPlan(libId, den, week) {
             const lib = globalMeals.find(m => m.id === libId);
             await _supabase.from('meal_templates').insert([{ name: lib.name, description: lib.description, category: lib.category, day: den, week: week }]);
             renderPlanner();
         }
-        async function delPlan(id) { await _supabase.from('meal_templates').delete().eq('id', id);         async function renderUserMenu() {
-            let isPub = localStorage.getItem('menu_published') === 'true';
-            if (localStorage.getItem('menu_published') === null) isPub = true;
-            document.getElementById('published-status-msg').classList.toggle('hidden', isPub);
-            document.getElementById('user-menu-grid').classList.toggle('hidden', !isPub);
-            if(!isPub) return;
 
-            const now = new Date();
-            const currentDayIdx = now.getDay(); // 0=Ne, 1=Po...
-            const currentHour = now.getHours();
-                    async function renderUserMenu() {
-            // Safari Fix: Pokud je stav null, defaultně menu zobrazíme
+        async function delPlan(id) { 
+            await _supabase.from('meal_templates').delete().eq('id', id); 
+            renderPlanner(); 
+        }
+
+        async function renderUserMenu() {
+            // Safari Fix
             let isPub = localStorage.getItem('menu_published');
             isPub = (isPub === 'true' || isPub === null); 
             
@@ -302,43 +298,39 @@
             document.getElementById('user-menu-grid').classList.toggle('hidden', !isPub);
             if(!isPub) return;
 
-            // Logika deadline: Dnes do 14:00 nejdříve na pozítří (+2 dny)
             const now = new Date();
-            const currentDayIdx = now.getDay(); // 0=Ne, 1=Po...
+            const currentDayIdx = now.getDay(); 
             const currentHour = now.getHours();
+            // Pravidlo 14:00 + 48h (V pondělí po 14h zamkne Po, Út, St)
             let minAllowedDayIdx = currentDayIdx + (currentHour >= 14 ? 3 : 2);
 
             const { data: menu } = await _supabase.from('meal_templates').select('*');
             
             const draw = (w, id) => {
                 let h = `<h2 class="bg-slate-800 text-white p-2 rounded-xl text-center font-black uppercase text-[10px] mb-3">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
-                
                 DNY.forEach((d, idx) => {
-                    const dayNum = idx + 1; // 1=Po...
-                    // Zámek platí pro dny v aktuálním týdnu, které jsou před deadlinem
+                    const dayNum = idx + 1;
                     const isLocked = (w === 'current' && dayNum < minAllowedDayIdx);
                     const dm = menu?.filter(m => m.day === d && m.week === w) || [];
                     
                     if(dm.length) {
-                        h += `<div class="bg-white p-3 rounded-2xl border mb-3 shadow-sm ${isLocked ? 'locked-day' : ''}">
+                        h += `<div class="bg-white p-3 rounded-2xl border mb-3 shadow-sm ${isLocked ? 'opacity-50 pointer-events-none grayscale' : ''}">
                             <div class="flex justify-between items-center mb-1">
                                 <p class="font-black uppercase text-[9px] text-slate-400">${d}</p>
                                 ${isLocked ? '<span class="text-[8px] font-bold text-red-500 uppercase italic">Uzávěrka vypršela</span>' : ''}
                             </div>`;
-                        
                         dm.forEach(m => {
                             const u = `${m.name} (${d})`;
                             const isS = selectedItems[u];
-                            
-                            // Načtení cen konkrétního uživatele (zohlednění firmy)
+                            // Ceny podle firmy zákazníka
                             const pb = currentUser?.pb || 169;
                             const ps = currentUser?.ps || 49;
                             const price = (m.category||"").toLowerCase().includes("polévka") ? ps : pb;
                             
-                            h += `<div ${isLocked ? '' : `onclick="toggleSelect('${u}', ${price})"`} class="p-3 rounded-xl border-2 mb-2 cursor-pointer transition-all ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
+                            h += `<div onclick="toggleSelect('${u}', ${price})" class="p-3 rounded-xl border-2 mb-2 cursor-pointer ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
                                 <div class="flex justify-between font-bold text-xs">
                                     <span>${m.name}</span>
-                                    <span class="text-orange-600 font-black">${price} Kč</span>
+                                    <span class="text-orange-600">${price} Kč</span>
                                 </div>
                                 ${m.description ? `<p class="text-[9px] text-slate-500 italic mt-1">${m.description}</p>` : ''}
                             </div>`;
@@ -348,76 +340,19 @@
                 });
                 document.getElementById(id).innerHTML = h;
             };
-
-            draw('current', 'list-current'); 
-            draw('next', 'list-next');
-        }
-
-                });
-                document.getElementById(id).innerHTML = h;
-            };
             draw('current', 'list-current'); draw('next', 'list-next');
-        }
-
-            const msgEl = document.getElementById('published-status-msg');
-            const gridEl = document.getElementById('user-menu-grid');
-
-            if(!isPub) {
-                if(msgEl) msgEl.classList.remove('hidden');
-                if(gridEl) gridEl.classList.add('hidden');
-                return;
-            }
-            
-            if(msgEl) msgEl.classList.add('hidden');
-            if(gridEl) gridEl.classList.remove('hidden');
-
-            const { data: menu, error } = await _supabase.from('meal_templates').select('*');
-            
-            if (error) {
-                console.error("Chyba načítání menu:", error);
-                return;
-            }
-
-            const draw = (w, id) => {
-                const target = document.getElementById(id);
-                if (!target) return;
-
-                let h = `<h2 class="bg-slate-800 text-white p-3 rounded-2xl text-center font-black uppercase text-[10px] mb-4">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
-                
-                DNY.forEach(d => {
-                    const dm = menu?.filter(m => m.day === d && m.week === w) || [];
-                    if(dm.length) {
-                        h += `<div class="bg-white p-4 rounded-3xl border mb-4 shadow-sm"><p class="font-black uppercase text-[10px] text-slate-400 mb-2 border-b pb-1">${d}</p>`;
-                        dm.forEach(m => {
-                            const u = `${m.name} (${d})`;
-                            const isS = selectedItems[u];
-                            const price = (m.category || "").toLowerCase().includes("polévka") ? currentUser.ps : currentUser.pb;
-                            
-                            h += `<div onclick="toggleSelect('${u}', ${price})" class="p-3 rounded-2xl border-2 mb-2 cursor-pointer transition-all ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between font-bold text-sm">
-                                    <span>${m.name}</span>
-                                    <span class="text-orange-600">${price} Kč</span>
-                                </div>
-                                ${m.description ? `<p class="text-[10px] text-slate-500 italic mt-1">${m.description}</p>` : ''}
-                            </div>`;
-                        });
-                        h += `</div>`;
-                    }
-                });
-                target.innerHTML = h;
-            };
-            draw('current', 'list-current'); 
-            draw('next', 'list-next');
         }
 
         function toggleSelect(n, p) { if(selectedItems[n]) delete selectedItems[n]; else selectedItems[n] = { name: n, price: p }; updateTotal(); renderUserMenu(); }
         function updateTotal() { let t = 0; for(let k in selectedItems) t += selectedItems[k].price; document.getElementById('total-price').innerText = t + " Kč"; }
+        
         async function submitOrder() {
             const items = Object.keys(selectedItems).join(", ");
             await _supabase.from('orders').delete().eq('user_name', currentUser.name);
             if(items) await _supabase.from('orders').insert([{ user_name: currentUser.name, user_firm: currentUser.firm, items: items }]);
-            alert("Objednávka uložena!");
+            alert("Objednávka uložena! 🥗");
         }
+
         async function loadOrderHistory() {
             const { data } = await _supabase.from('orders').select('*').eq('user_name', currentUser.name).limit(1);
             selectedItems = {};
@@ -430,26 +365,22 @@
             updateTotal();
         }
 
-        // --- KUCHYŇ ---
-                async function renderKitchen() {
+        async function renderKitchen() {
             const { data: menu } = await _supabase.from('meal_templates').select('*');
             const { data: orders } = await _supabase.from('orders').select('*');
             const cont = document.getElementById('view-orders');
             cont.innerHTML = '<h2 class="text-3xl font-black uppercase text-center mb-10">Přehled Kuchyně 👨‍🍳</h2>';
-            
             if (!orders?.length) { cont.innerHTML += '<p class="text-center font-bold text-slate-400">Žádné objednávky</p>'; return; }
-
+            
             const renderWeekSection = (weekLabel, weekKey) => {
                 let hasData = false;
                 let weekHtml = `<div class="space-y-6 mb-12"><h3 class="bg-black text-white p-4 rounded-3xl text-center font-black uppercase italic">${weekLabel}</h3><div class="grid lg:grid-cols-2 gap-6">`;
-                
                 DNY.forEach(d => {
                     let counts = {}, firms = {}, dayExists = false;
                     orders.forEach(o => {
                         if(o.items) o.items.split(", ").forEach(it => {
-                            // Kontrola, zda jídlo z objednávky existuje v šabloně pro daný týden a den
-                            const mealInTemplate = menu?.find(m => `${m.name} (${d})` === it && m.week === weekKey);
-                            if(mealInTemplate) {
+                            const template = menu?.find(m => `${m.name} (${d})` === it && m.week === weekKey);
+                            if(template) {
                                 dayExists = true; hasData = true;
                                 const meal = it.replace(`(${d})`,'').trim();
                                 counts[meal] = (counts[meal] || 0) + 1;
@@ -458,28 +389,21 @@
                             }
                         });
                     });
-
                     if(dayExists) {
-                        weekHtml += `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-t-8 border-green-500">
-                            <h4 class="text-xl font-black uppercase text-green-600 mb-4">${d}</h4>
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <div><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Celkem porcí:</p>`;
-                                for(let m in counts) weekHtml += `<div class="flex justify-between border-b py-1 font-bold"><span>${m}</span><span>${counts[m]}x</span></div>`;
-                        weekHtml += `</div><div><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Rozpis firem:</p>`;
-                                for(let f in firms) { weekHtml += `<div class="mb-2 p-2 bg-slate-50 rounded-xl text-[10px]"><strong>${f}:</strong>`; for(let m in firms[f]) weekHtml += `<div>${m} (${firms[f][m]}x)</div>`; weekHtml += `</div>`; }
+                        weekHtml += `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-t-8 border-green-500"><h4 class="text-xl font-black uppercase text-green-600 mb-4">${d}</h4><div class="grid md:grid-cols-2 gap-4"><div><p class="text-[10px] font-black text-slate-400 uppercase">Celkem:</p>`;
+                        for(let m in counts) weekHtml += `<div class="flex justify-between border-b py-1 font-bold"><span>${m}</span><span>${counts[m]}x</span></div>`;
+                        weekHtml += `</div><div><p class="text-[10px] font-black text-slate-400 uppercase">Firmy:</p>`;
+                        for(let f in firms) { weekHtml += `<div class="mb-2 p-2 bg-slate-50 rounded-xl text-[10px]"><strong>${f}:</strong>`; for(let m in firms[f]) weekHtml += `<div>${m} (${firms[f][m]}x)</div>`; weekHtml += `</div>`; }
                         weekHtml += `</div></div></div>`;
                     }
                 });
-                weekHtml += `</div></div>`;
-                return hasData ? weekHtml : '';
+                return hasData ? weekHtml + "</div></div>" : '';
             };
-
-            cont.innerHTML += renderWeekSection("Tento týden", "current");
-            cont.innerHTML += renderWeekSection("Příští týden", "next");
+            cont.innerHTML += renderWeekSection("Tento týden", "current") + renderWeekSection("Příští týden", "next");
         }
 
         function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
-        async function rolloverWeek() { if(confirm("Reset týdne a posun menu?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name',''); await _supabase.from('meal_templates').delete().eq('week','current'); await _supabase.from('meal_templates').update({week:'current'}).eq('week','next'); renderAdmin(); } }
+        async function rolloverWeek() { if(confirm("Reset týdne?")) { localStorage.setItem('menu_published', 'false'); await _supabase.from('orders').delete().neq('user_name',''); await _supabase.from('meal_templates').delete().eq('week','current'); await _supabase.from('meal_templates').update({week:'current'}).eq('week','next'); renderAdmin(); } }
     </script>
 </body>
 </html>
