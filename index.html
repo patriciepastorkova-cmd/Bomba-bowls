@@ -293,16 +293,29 @@
             const now = new Date();
             const currentDayIdx = now.getDay(); // 0=Ne, 1=Po...
             const currentHour = now.getHours();
+                    async function renderUserMenu() {
+            // Safari Fix: Pokud je stav null, defaultně menu zobrazíme
+            let isPub = localStorage.getItem('menu_published');
+            isPub = (isPub === 'true' || isPub === null); 
             
-            // LOGIKA ZÁMKU: Dnes do 14h nejdříve na pozítří (+2 dny). Po 14h až za 3 dny.
+            document.getElementById('published-status-msg').classList.toggle('hidden', isPub);
+            document.getElementById('user-menu-grid').classList.toggle('hidden', !isPub);
+            if(!isPub) return;
+
+            // Logika deadline: Dnes do 14:00 nejdříve na pozítří (+2 dny)
+            const now = new Date();
+            const currentDayIdx = now.getDay(); // 0=Ne, 1=Po...
+            const currentHour = now.getHours();
             let minAllowedDayIdx = currentDayIdx + (currentHour >= 14 ? 3 : 2);
 
             const { data: menu } = await _supabase.from('meal_templates').select('*');
+            
             const draw = (w, id) => {
                 let h = `<h2 class="bg-slate-800 text-white p-2 rounded-xl text-center font-black uppercase text-[10px] mb-3">${w==='current'?'Tento týden':'Příští týden'}</h2>`;
+                
                 DNY.forEach((d, idx) => {
-                    const dayNum = idx + 1; // 1=Pondělí, 2=Úterý...
-                    // Zámek platí pouze pro aktuální týden (current)
+                    const dayNum = idx + 1; // 1=Po...
+                    // Zámek platí pro dny v aktuálním týdnu, které jsou před deadlinem
                     const isLocked = (w === 'current' && dayNum < minAllowedDayIdx);
                     const dm = menu?.filter(m => m.day === d && m.week === w) || [];
                     
@@ -312,16 +325,34 @@
                                 <p class="font-black uppercase text-[9px] text-slate-400">${d}</p>
                                 ${isLocked ? '<span class="text-[8px] font-bold text-red-500 uppercase italic">Uzávěrka vypršela</span>' : ''}
                             </div>`;
+                        
                         dm.forEach(m => {
-                            const u = `${m.name} (${d})`, isS = selectedItems[u];
-                            const price = (m.category||"").toLowerCase().includes("polévka") ? currentUser.ps : currentUser.pb;
-                            h += `<div ${isLocked ? '' : `onclick="toggleSelect('${u}', ${price})"`} class="p-3 rounded-xl border-2 mb-2 cursor-pointer ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
-                                <div class="flex justify-between font-bold text-xs"><span>${m.name}</span><span>${price} Kč</span></div>
+                            const u = `${m.name} (${d})`;
+                            const isS = selectedItems[u];
+                            
+                            // Načtení cen konkrétního uživatele (zohlednění firmy)
+                            const pb = currentUser?.pb || 169;
+                            const ps = currentUser?.ps || 49;
+                            const price = (m.category||"").toLowerCase().includes("polévka") ? ps : pb;
+                            
+                            h += `<div ${isLocked ? '' : `onclick="toggleSelect('${u}', ${price})"`} class="p-3 rounded-xl border-2 mb-2 cursor-pointer transition-all ${isS ? 'border-green-500 bg-green-50' : 'bg-slate-50 border-transparent'}">
+                                <div class="flex justify-between font-bold text-xs">
+                                    <span>${m.name}</span>
+                                    <span class="text-orange-600 font-black">${price} Kč</span>
+                                </div>
                                 ${m.description ? `<p class="text-[9px] text-slate-500 italic mt-1">${m.description}</p>` : ''}
                             </div>`;
                         });
                         h += `</div>`;
                     }
+                });
+                document.getElementById(id).innerHTML = h;
+            };
+
+            draw('current', 'list-current'); 
+            draw('next', 'list-next');
+        }
+
                 });
                 document.getElementById(id).innerHTML = h;
             };
