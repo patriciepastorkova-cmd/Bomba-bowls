@@ -365,7 +365,7 @@
             updateTotal();
         }
 
-                async function renderKitchen() {
+                        async function renderKitchen() {
             const { data: menu } = await _supabase.from('meal_templates').select('*');
             const { data: orders } = await _supabase.from('orders').select('*');
             const cont = document.getElementById('view-orders');
@@ -380,18 +380,15 @@
                 let hasData = false;
                 let weekHtml = `<div class="space-y-6 mb-12">
                     <h3 class="bg-black text-white p-4 rounded-3xl text-center font-black uppercase italic">${weekLabel}</h3>
-                    <div class="grid lg:grid-cols-2 gap-6">`;
+                    <div class="grid lg:grid-cols-1 gap-6">`; // Změněno na 1 sloupec pro lepší čitelnost tabulek
                 
                 DNY.forEach(d => {
-                    let counts = {}, firms = {}, dayExists = false;
-                    
-                    // Vytvoříme seznam jídel, která jsou v šabloně pro TENTO konkrétní den a TENTO týden
+                    let counts = {}, firms = {}, dayOrders = [], dayExists = false;
                     const validMealsInTemplate = menu?.filter(m => m.day === d && m.week === weekKey).map(m => `${m.name} (${d})`) || [];
 
                     orders.forEach(o => {
                         if(o.items) {
                             o.items.split(", ").forEach(it => {
-                                // Kontrola: Jídlo z objednávky musí být v seznamu platných jídel pro daný týden a den
                                 if(validMealsInTemplate.includes(it)) {
                                     dayExists = true; 
                                     hasData = true;
@@ -401,24 +398,59 @@
                                     
                                     if(!firms[o.user_firm]) firms[o.user_firm] = {};
                                     firms[o.user_firm][mealNameOnly] = (firms[o.user_firm][mealNameOnly] || 0) + 1;
+
+                                    // Ukládáme data pro jmenný seznam
+                                    dayOrders.push({ jmeno: o.user_name, firma: o.user_firm, jidlo: mealNameOnly });
                                 }
                             });
                         }
                     });
 
                     if(dayExists) {
+                        const dayId = `detail-${weekKey}-${d.replace(/\s/g, '')}`;
                         weekHtml += `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-t-8 border-green-500">
-                            <h4 class="text-xl font-black uppercase text-green-600 mb-4">${d}</h4>
-                            <div class="grid md:grid-cols-2 gap-4">
+                            <div class="flex justify-between items-center mb-6">
+                                <h4 class="text-2xl font-black uppercase text-green-600">${d}</h4>
+                                <button onclick="document.getElementById('${dayId}').classList.toggle('hidden')" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-orange-500 transition-colors">
+                                    Detail pro fakturaci 📋
+                                </button>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-2 gap-8 mb-6">
                                 <div><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Celkem porcí:</p>`;
-                                for(let m in counts) weekHtml += `<div class="flex justify-between border-b py-1 font-bold"><span>${m}</span><span>${counts[m]}x</span></div>`;
+                                for(let m in counts) weekHtml += `<div class="flex justify-between border-b py-1 font-bold text-lg"><span>${m}</span><span>${counts[m]}x</span></div>`;
                         weekHtml += `</div><div><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Rozpis firem:</p>`;
                                 for(let f in firms) { 
-                                    weekHtml += `<div class="mb-2 p-2 bg-slate-50 rounded-xl text-[10px]"><strong>${f}:</strong>`; 
-                                    for(let m in firms[f]) weekHtml += `<div>${m} (${firms[f][m]}x)</div>`; 
+                                    weekHtml += `<div class="mb-2 p-3 bg-slate-50 rounded-xl text-xs"><strong>${f}:</strong>`; 
+                                    for(let m in firms[f]) weekHtml += `<div class="flex justify-between"><span>${m}</span><span>${firms[f][m]}x</span></div>`; 
                                     weekHtml += `</div>`; 
                                 }
-                        weekHtml += `</div></div></div>`;
+                        weekHtml += `</div></div>
+
+                            <div id="${dayId}" class="hidden mt-6 border-t pt-6">
+                                <p class="text-[10px] font-black text-orange-500 uppercase mb-3">Jmenovitý rozpis (Fakturace):</p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead>
+                                            <tr class="bg-slate-100 uppercase text-[9px]">
+                                                <th class="p-2 rounded-l-lg">Jméno</th>
+                                                <th class="p-2">Firma</th>
+                                                <th class="p-2 rounded-r-lg">Objednané jídlo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${dayOrders.sort((a,b) => a.firma.localeCompare(b.firma)).map(do_item => `
+                                                <tr class="border-b">
+                                                    <td class="p-2 font-bold">${do_item.jmeno}</td>
+                                                    <td class="p-2 text-slate-500">${do_item.firma}</td>
+                                                    <td class="p-2 italic text-orange-600 font-medium">${do_item.jidlo}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>`;
                     }
                 });
                 weekHtml += `</div></div>`;
@@ -428,6 +460,7 @@
             cont.innerHTML += renderWeekSection("Tento týden", "current");
             cont.innerHTML += renderWeekSection("Příští týden", "next");
         }
+
 
 
         function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
