@@ -365,11 +365,11 @@
             updateTotal();
         }
 
-                        async function renderKitchen() {
+async function renderKitchen() {
             const { data: menu } = await _supabase.from('meal_templates').select('*');
             const { data: orders } = await _supabase.from('orders').select('*');
             const cont = document.getElementById('view-orders');
-            cont.innerHTML = '<h2 class="text-3xl font-black uppercase text-center mb-10">Přehled Kuchyně 👨‍🍳</h2>';
+            cont.innerHTML = '<h2 class="text-3xl font-black uppercase text-center mb-10 text-[#800020]">Přehled Kuchyně 👨‍🍳</h2>';
             
             if (!orders?.length) { 
                 cont.innerHTML += '<p class="text-center font-bold text-slate-400">Žádné objednávky</p>'; 
@@ -379,8 +379,8 @@
             const renderWeekSection = (weekLabel, weekKey) => {
                 let hasData = false;
                 let weekHtml = `<div class="space-y-6 mb-12">
-                    <h3 class="bg-black text-white p-4 rounded-3xl text-center font-black uppercase italic">${weekLabel}</h3>
-                    <div class="grid lg:grid-cols-1 gap-6">`; // Změněno na 1 sloupec pro lepší čitelnost tabulek
+                    <h3 class="bg-[#800020] text-white p-4 rounded-3xl text-center font-black uppercase italic shadow-lg">${weekLabel}</h3>
+                    <div class="grid lg:grid-cols-1 gap-6">`;
                 
                 DNY.forEach(d => {
                     let counts = {}, firms = {}, dayOrders = [], dayExists = false;
@@ -399,8 +399,8 @@
                                     if(!firms[o.user_firm]) firms[o.user_firm] = {};
                                     firms[o.user_firm][mealNameOnly] = (firms[o.user_firm][mealNameOnly] || 0) + 1;
 
-                                    // Ukládáme data pro jmenný seznam
-                                    dayOrders.push({ jmeno: o.user_name, firma: o.user_firm, jidlo: mealNameOnly });
+                                    // TADY UKLÁDÁME DATA I S CELÝM NÁZVEM JÍDLA PRO MAZÁNÍ (jidlo_full)
+                                    dayOrders.push({ jmeno: o.user_name, firma: o.user_firm, jidlo: mealNameOnly, jidlo_full: it });
                                 }
                             });
                         }
@@ -408,42 +408,48 @@
 
                     if(dayExists) {
                         const dayId = `detail-${weekKey}-${d.replace(/\s/g, '')}`;
-                        weekHtml += `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-t-8 border-green-500">
+                        weekHtml += `<div class="bg-white p-6 rounded-[2.5rem] shadow-lg border-t-8 border-[#800020]">
                             <div class="flex justify-between items-center mb-6">
-                                <h4 class="text-2xl font-black uppercase text-green-600">${d}</h4>
-                                <button onclick="document.getElementById('${dayId}').classList.toggle('hidden')" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-orange-500 transition-colors">
-                                    Detail pro fakturaci 📋
+                                <h4 class="text-2xl font-black uppercase text-[#800020]">${d}</h4>
+                                <button onclick="document.getElementById('${dayId}').classList.toggle('hidden')" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-[#800020] transition-colors shadow-md">
+                                    Detail / Zrušit jídlo 📋
                                 </button>
                             </div>
                             
                             <div class="grid md:grid-cols-2 gap-8 mb-6">
-                                <div><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Celkem porcí:</p>`;
-                                for(let m in counts) weekHtml += `<div class="flex justify-between border-b py-1 font-bold text-lg"><span>${m}</span><span>${counts[m]}x</span></div>`;
-                        weekHtml += `</div><div><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Rozpis firem:</p>`;
+                                <div><p class="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Celkem porcí:</p>`;
+                                for(let m in counts) weekHtml += `<div class="flex justify-between border-b py-1 font-bold text-lg text-slate-700"><span>${m}</span><span class="text-[#800020]">${counts[m]}x</span></div>`;
+                        weekHtml += `</div><div><p class="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Rozpis firem:</p>`;
                                 for(let f in firms) { 
-                                    weekHtml += `<div class="mb-2 p-3 bg-slate-50 rounded-xl text-xs"><strong>${f}:</strong>`; 
-                                    for(let m in firms[f]) weekHtml += `<div class="flex justify-between"><span>${m}</span><span>${firms[f][m]}x</span></div>`; 
+                                    weekHtml += `<div class="mb-2 p-3 bg-slate-50 rounded-xl text-xs border border-slate-100"><strong>${f}:</strong>`; 
+                                    for(let m in firms[f]) weekHtml += `<div class="flex justify-between"><span>${m}</span><span class="font-bold">${firms[f][m]}x</span></div>`; 
                                     weekHtml += `</div>`; 
                                 }
                         weekHtml += `</div></div>
 
-                            <div id="${dayId}" class="hidden mt-6 border-t pt-6">
-                                <p class="text-[10px] font-black text-orange-500 uppercase mb-3">Jmenovitý rozpis (Fakturace):</p>
+                            <div id="${dayId}" class="hidden mt-6 border-t pt-6 bg-slate-50 rounded-3xl p-4 shadow-inner">
+                                <p class="text-[10px] font-black text-[#800020] uppercase mb-3 text-center tracking-widest">Jmenovitý rozpis a správa objednávek</p>
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left text-xs">
                                         <thead>
-                                            <tr class="bg-slate-100 uppercase text-[9px]">
-                                                <th class="p-2 rounded-l-lg">Jméno</th>
-                                                <th class="p-2">Firma</th>
-                                                <th class="p-2 rounded-r-lg">Objednané jídlo</th>
+                                            <tr class="bg-white uppercase text-[9px] text-slate-400">
+                                                <th class="p-3 rounded-l-2xl">Jméno</th>
+                                                <th class="p-3">Firma</th>
+                                                <th class="p-3">Jídlo</th>
+                                                <th class="p-3 rounded-r-2xl text-right">Akce</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             ${dayOrders.sort((a,b) => a.firma.localeCompare(b.firma)).map(do_item => `
-                                                <tr class="border-b">
-                                                    <td class="p-2 font-bold">${do_item.jmeno}</td>
-                                                    <td class="p-2 text-slate-500">${do_item.firma}</td>
-                                                    <td class="p-2 italic text-orange-600 font-medium">${do_item.jidlo}</td>
+                                                <tr class="border-b border-slate-100 last:border-0">
+                                                    <td class="p-3 font-bold text-slate-800">${do_item.jmeno}</td>
+                                                    <td class="p-3 text-slate-500">${do_item.firma}</td>
+                                                    <td class="p-3 italic text-[#800020] font-medium">${do_item.jidlo}</td>
+                                                    <td class="p-3 text-right">
+                                                        <button onclick="deleteOrderItem('${do_item.jmeno}', '${do_item.jidlo_full}')" class="bg-red-50 text-red-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all">
+                                                            Zrušit
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             `).join('')}
                                         </tbody>
@@ -461,6 +467,29 @@
             cont.innerHTML += renderWeekSection("Příští týden", "next");
         }
 
+        // TUTO FUNKCI VLOŽ HNED POD TU PŘEDCHOZÍ (zajistí samotné smazání v databázi)
+        async function deleteOrderItem(userName, fullItemName) {
+            if (!confirm(`Opravdu chcete zrušit jídlo "${fullItemName}" pro uživatele ${userName}?`)) return;
+
+            const { data } = await _supabase.from('orders').select('*').eq('user_name', userName).single();
+
+            if (data && data.items) {
+                let itemsArray = data.items.split(", ");
+                const index = itemsArray.indexOf(fullItemName);
+                if (index > -1) {
+                    itemsArray.splice(index, 1);
+                }
+
+                if (itemsArray.length > 0) {
+                    await _supabase.from('orders').update({ items: itemsArray.join(", ") }).eq('user_name', userName);
+                } else {
+                    await _supabase.from('orders').delete().eq('user_name', userName);
+                }
+                
+                alert("Objednávka byla upravena.");
+                renderKitchen(); // Znovu načte kuchyni, aby zmizelo to smazané
+            }
+        }
 
 
         function publishMenu() { localStorage.setItem('menu_published', 'true'); alert("Zveřejněno!"); }
