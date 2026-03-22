@@ -302,7 +302,7 @@
             const currentDayIdx = now.getDay(); 
             const currentHour = now.getHours();
             // Pravidlo 14:00 + 48h (V pondělí po 14h zamkne Po, Út, St)
-            let minAllowedDayIdx = 0;
+            let minAllowedDayIdx = now.getDay() + (now.getHours() >= 14 ? 3 : 2); 
 
             const { data: menu } = await _supabase.from('meal_templates').select('*');
             
